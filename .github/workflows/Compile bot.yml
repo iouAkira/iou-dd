@@ -55,13 +55,13 @@ jobs:
         export GOOS=linux
 
         export GOARCH=amd64
-        go build -o ddbot-amd64 ddbot.go
+        go build -o ~/ddbot-amd64 ddbot.go
 
         export GOARCH=arm64
-        go build -o ddbot-arm64 ddbot.go
+        go build -o ~/ddbot-arm64 ddbot.go
 
         export GOARCH=arm
-        go build -o ddbot-arm ddbot.go
+        go build -o ~/ddbot-arm ddbot.go
         
     - name: Commit files
       run: |
@@ -69,9 +69,9 @@ jobs:
         
         ls -l ./ddbot
         
-        git add ./ddbot/ddbot-amd64
-        git add ./ddbot/ddbot-arm64
-        git add ./ddbot/ddbot-arm
+        cp -rf ~/ddbot-amd64 ./ddbot
+        cp -rf ~/ddbot-arm64 ./ddbot
+        cp -rf ~/ddbot-arm ./ddbot
         
         git config --local user.email "e.akimoto.akira@gmail.com"
         git config --local user.name "Github-Action"
