@@ -69,37 +69,13 @@ fi
 echo "目前只构建三个平台（and64,arm64,arm）的ddbot，其他架构平台暂未发现使用者，如果有欢迎上报，并且只知道arch为x86_64(amd64)，aarch64(arm64)所以其他的就归到arm上"
 if [ "$(arch)" == "x86_64" ]; then
     echo "amd64"
-    if [ -f /usr/local/bin/ddbot ]; then
-        cmp -s $PWD/ddbot/ddbot-amd64 /usr/local/bin/ddbot
-
-        if [ $? -ne 0 ]; then
-            cp $PWD/ddbot/ddbot-amd64 /usr/local/bin/ddbot
-        fi
-    else
-        cp $PWD/ddbot/ddbot-amd64 /usr/local/bin/ddbot
-    fi
+    cp $PWD/ddbot/ddbot-amd64 /usr/local/bin/ddbot
 elif [ "$(arch)" == "aarch64" ]; then
     echo "arm64"
-    if [ -f /usr/local/bin/ddbot ]; then
-        cmp -s $PWD/ddbot/ddbot-arm64 /usr/local/bin/ddbot
-
-        if [ $? -ne 0 ]; then
-            cp $PWD/ddbot/ddbot-arm64 /usr/local/bin/ddbot
-        fi
-    else
-        cp $PWD/ddbot/ddbot-arm64 /usr/local/bin/ddbot
-    fi
+    cp $PWD/ddbot/ddbot-arm64 /usr/local/bin/ddbot
 else
     echo "arm"
-    if [ -f /usr/local/bin/ddbot ]; then
-        cmp -s $PWD/ddbot/ddbot-arm64 /usr/local/bin/ddbot
-
-        if [ $? -ne 0 ]; then
-            cp $PWD/ddbot/ddbot-arm /usr/local/bin/ddbot
-        fi
-    else
-        cp $PWD/ddbot/ddbot-arm /usr/local/bin/ddbot
-    fi
+    cp $PWD/ddbot/ddbot-arm /usr/local/bin/ddbot
 fi
 chmod +x /usr/local/bin/ddbot
 

@@ -84,6 +84,11 @@ func main() {
 		}
 		os.Exit(0)
 	}
+	// -up 参数为空，启动bot
+	if ddConfig.TgBotToken == "" || ddConfig.TgUserID == 0 {
+		log.Printf("Telegram Bot相关环境变量配置不完整，故不启动。(botToken=%v;tgUserID=%v)", TgBotToken, TgUserID)
+		os.Exit(0)
+	}
 
 	var startErr error
 	bot, startErr = tgbotapi.NewBotAPI(TgBotToken)
@@ -222,10 +227,7 @@ func loadEnv(envFilePath string) {
 			TgUserID = convTgUserID
 		}
 	}
-	if TgBotToken == "" || TgUserID == 0 {
-		log.Printf("Telegram Bot相关环境变量配置不完整，故不启动。(botToken=%v;tgUserID=%v)", TgBotToken, TgUserID)
-		os.Exit(0)
-	}
+
 	ddConfig = &models.DDEnv{
 		RepoBaseDir:              RepoBaseDir,
 		DataBaseDir:              DataBaseDir,
