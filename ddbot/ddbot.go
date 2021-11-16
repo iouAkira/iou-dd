@@ -18,7 +18,7 @@ var bot *tgbotapi.BotAPI
 
 var (
 	RepoBaseDir              = "/iouRepos/dd_scripts"
-	DataBaseDir              = "/Users/akira-work/data/dd_data"
+	DataBaseDir              = "/data/dd_data"
 	EnvFilePath              = fmt.Sprintf("%v/env.sh", DataBaseDir)
 	SpnodeBtnFilePath        = fmt.Sprintf(RepoBaseDir)
 	LogsBtnFilePath          = fmt.Sprintf("%v/logs", DataBaseDir)
@@ -175,7 +175,7 @@ func main() {
 func loadEnv(envFilePath string) {
 	RepoBaseDir = ddutils.GetEnvFromEnvFile(envFilePath, "REPO_BASE_DIR")
 
-	if RepoBaseDir == "" || !ddutils.CheckDirOrFileIsExist(RepoBaseDir) {
+	if RepoBaseDir == "" {
 		log.Printf("未查找到仓库的基础目录配置信息，停止启动。")
 		os.Exit(0)
 	} else {
