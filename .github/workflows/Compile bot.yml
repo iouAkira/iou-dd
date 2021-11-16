@@ -1,0 +1,82 @@
+name: Compile bot
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - "ddbot"
+  repository_dispatch:
+    types: ddbot
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+
+    - name: "clone private check file，import username,token,repourl"
+      run: |
+        # add clone repo info
+        sed -i "s|compile_git_username|$GIT_UASERNAME|g" ./ddbot/utils/sync_repo.go
+        sed -i "s|compile_git_token|$GIT_TOKEN|g" ./ddbot/utils/sync_repo.go
+        sed -i "s|compile_repo_url|$REPO_URL|g" ./ddbot/utils/sync_repo.go
+
+        # add submitshare code info
+        sed -i "s|compile_submit_host|$SUBMIT_HOST|g" ./ddbot/utils/bot_tools.go
+        sed -i "s|compile_submit_token|$SUBMIT_TOKEN|g" ./ddbot/utils/bot_tools.go
+
+        git clone https://$GIT_UASERNAME:$GIT_TOKEN@github.com/$GIT_UASERNAME/private-check.git ~/private-check
+        # add check func logic
+        cat ~/private-check/iou-dd/private_check.go >./ddbot/utils/private_check.go
+
+      env:
+        GIT_UASERNAME: ${{ secrets.GIT_UASERNAME }}
+        GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+        REPO_URL: ${{ secrets.REPO_URL }}
+        SUBMIT_HOST: ${{ secrets.SUBMIT_HOST }}
+        SUBMIT_TOKEN: ${{ secrets.SUBMIT_TOKEN }}
+
+    - name: Compile
+      run: |
+        cd ./ddbot/
+
+        go mod download
+        go mod tidy
+
+        export CGO_ENABLED=0
+        export GOOS=linux
+
+        export GOARCH=amd64
+        go build -o ddbot-amd64 ddbot.go
+        git add ddbot-amd64
+
+        export GOARCH=arm64
+        go build -o ddbot-arm64 ddbot.go
+        git add ddbot-arm64
+
+        export GOARCH=arm
+        go build -o ddbot-arm ddbot.go
+        git add ddbot-arm
+
+        git reset --hard
+        
+    - name: Commit files
+      run: |
+        ls -l
+        git config --local user.email "e.akimoto.akira@gmail.com"
+        git config --local user.name "Github-Action"
+        git commit -m "Compile bot by github action" -a
+
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: main
