@@ -68,26 +68,38 @@ fi
 # 判断平台架构使用对应平台版本的ddBot
 echo "目前只构建三个平台（and64,arm64,arm）的ddBot，其他架构平台暂未发现使用者，如果有欢迎上报，并且只知道arch为x86_64(amd64)，aarch64(arm64)所以其他的就归到arm上"
 if [ "$(arch)" == "x86_64" ]; then
-  echo "amd64"
-  cmp -s $PWD/ddbot/ddBot-amd64 /usr/local/bin/ddBot
-  
-  if [ $? -ne 0 ] ;then
-    cp $PWD/ddbot/ddBot-amd64 /usr/local/bin/ddBot
-  fi
+    echo "amd64"
+    if [ -f /usr/local/bin/ddBot ]; then
+        cmp -s $PWD/ddbot/ddBot-amd64 /usr/local/bin/ddBot
+
+        if [ $? -ne 0 ]; then
+            cp $PWD/ddbot/ddBot-amd64 /usr/local/bin/ddBot
+        fi
+    else
+        cp $PWD/ddbot/ddBot-amd64 /usr/local/bin/ddBot
+    fi
 elif [ "$(arch)" == "aarch64" ]; then
-  echo "arm64"
-  cmp -s $PWD/ddbot/ddBot-arm64 /usr/local/bin/ddBot
-  
-  if [ $? -ne 0 ] ;then
-    cp $PWD/ddbot/ddBot-arm64 /usr/local/bin/ddBot
-  fi
+    echo "arm64"
+    if [ -f /usr/local/bin/ddBot ]; then
+        cmp -s $PWD/ddbot/ddBot-arm64 /usr/local/bin/ddBot
+
+        if [ $? -ne 0 ]; then
+            cp $PWD/ddbot/ddBot-arm64 /usr/local/bin/ddBot
+        fi
+    else
+        cp $PWD/ddbot/ddBot-arm64 /usr/local/bin/ddBot
+    fi
 else
-  echo "arm"
-  cmp -s $PWD/ddbot/ddBot-arm64 /usr/local/bin/ddBot
-  
-  if [ $? -ne 0 ] ;then
-    cp $PWD/ddbot/ddBot-arm /usr/local/bin/ddBot
-  fi
+    echo "arm"
+    if [ -f /usr/local/bin/ddBot ]; then
+        cmp -s $PWD/ddbot/ddBot-arm64 /usr/local/bin/ddBot
+
+        if [ $? -ne 0 ]; then
+            cp $PWD/ddbot/ddBot-arm /usr/local/bin/ddBot
+        fi
+    else
+        cp $PWD/ddbot/ddBot-arm /usr/local/bin/ddBot
+    fi
 fi
 chmod +x /usr/local/bin/ddBot
 
