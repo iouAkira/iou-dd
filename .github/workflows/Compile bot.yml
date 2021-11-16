@@ -65,12 +65,11 @@ jobs:
         export GOARCH=arm
         go build -o ddbot-arm ddbot.go
         git add ddbot-arm
-
-        git reset --hard
         
     - name: Commit files
       run: |
-        ls -l
+        git reset --hard
+        
         git config --local user.email "e.akimoto.akira@gmail.com"
         git config --local user.name "Github-Action"
         git commit -m "Compile bot by github action" -a
