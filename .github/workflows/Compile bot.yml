@@ -56,19 +56,22 @@ jobs:
 
         export GOARCH=amd64
         go build -o ddbot-amd64 ddbot.go
-        git add ddbot-amd64
 
         export GOARCH=arm64
         go build -o ddbot-arm64 ddbot.go
-        git add ddbot-arm64
 
         export GOARCH=arm
         go build -o ddbot-arm ddbot.go
-        git add ddbot-arm
         
     - name: Commit files
       run: |
         git reset --hard
+        
+        ls -l ./ddbot
+        
+        git add ./ddbot/ddbot-amd64
+        git add ./ddbot/ddbot-arm64
+        git add ./ddbot/ddbot-arm
         
         git config --local user.email "e.akimoto.akira@gmail.com"
         git config --local user.name "Github-Action"
