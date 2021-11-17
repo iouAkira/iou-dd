@@ -79,7 +79,7 @@ else
 fi
 chmod +x /usr/local/bin/ddbot
 
-echo "开始同步仓库dd_scripts..."
+echo "[dd_scripts]开始同步仓库..."
 sleep 2
-ddbot -up syncRepo | sed -e "s|^|[$PWD-->exec ddbot sync repo] |"
-echo "dd_scripts仓库完成..."
+ddbot -up syncRepo | sed -e "s|^|[->exec ddbot sync repo] |"
+echo "[dd_scripts]仓库同步完成..."
