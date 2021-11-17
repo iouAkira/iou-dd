@@ -42,22 +42,17 @@ var (
 var ddConfig = new(models.DDEnv)
 
 func main() {
-	//构建Linux amd64(x86_64)   CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ddBot-amd64 ddBot.go
-	//构建Linux arm64(aarch64)  CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o ddBot-arm64 ddBot.go
-	//构建Linux arm64(armv7,v6) CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -o ddBot-arm ddBot.go
-	//构建Windows下可执行文件 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build goBot.go
-	//构建macOS下可执行文件   CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build goBot.go
 	var envParams string
 	var upParams string
 	// StringVar用指定的名称、控制台参数项目、默认值、使用信息注册一个string类型flag，并将flag的值保存到p指向的变量
 	flag.StringVar(&envParams, "env", EnvFilePath, fmt.Sprintf("默认为[%v],如果env.sh文件不在该默认路径，请使用-env指定，否则程序将不启动。", EnvFilePath))
 	flag.StringVar(&upParams, "up", "", "默认为空，为启动bot；commitShareCode为提交互助码到助力池；syncRepo为同步仓库代码；")
 	flag.Parse()
-	log.Printf("-env 启动参数值:[%v]; -up 启动参数值:[%v]", envParams, upParams)
+	fmt.Printf("-env 启动参数值:[%v]; -up 启动参数值:[%v]", envParams, upParams)
 	if ddutils.CheckDirOrFileIsExist(envParams) {
 		EnvFilePath = envParams
 	} else {
-		log.Printf("[%v] ddbot需要是用相关环境变量配置文件不存在，确认目录文件是否存在", envParams)
+		fmt.Printf("[%v] ddbot需要是用相关环境变量配置文件不存在，确认目录文件是否存在", envParams)
 		os.Exit(0)
 	}
 	//读取加载程序需要使用的环境变量
@@ -65,28 +60,28 @@ func main() {
 
 	// -up 启动参数 不指定默认启动ddbot
 	if upParams != "" {
-		log.Printf("传入 -up参数：%v ", upParams)
+		fmt.Printf("传入 -up参数：%v ", upParams)
 		if upParams == "commitShareCode" {
-			log.Printf("启动程序指定了 -up 参数为 %v 开始上传互助码。", upParams)
+			fmt.Printf("启动程序指定了 -up 参数为 %v 开始上传互助码。", upParams)
 			ddutils.UploadShareCode(ddConfig)
 		} else if upParams == "syncRepo" {
-			log.Printf("启动程序指定了 -up 参数为 %v 开始同步仓库代码。", upParams)
+			fmt.Printf("启动程序指定了 -up 参数为 %v 开始同步仓库代码。", upParams)
 			if ddConfig.RepoBaseDir != "" {
 				ddutils.SyncRepo(ddConfig)
 			} else {
-				log.Printf("同步仓库设定的目录[%v]不规范，退出同步。", ddConfig.RepoBaseDir)
+				fmt.Printf("同步仓库设定的目录[%v]不规范，退出同步。", ddConfig.RepoBaseDir)
 			}
 		} else if upParams == "renewCookie" {
-			log.Printf("启动程序指定了 -up 参数为 %v 开始给 %v 里面的全部wskey续期。", upParams, CookiesWSKeyListFilePath)
+			fmt.Printf("启动程序指定了 -up 参数为 %v 开始给 %v 里面的全部wskey续期。", upParams, CookiesWSKeyListFilePath)
 			ddutils.RenewAllCookie(ddConfig)
 		} else {
-			log.Printf("请传入传入的对应 -up参数：%v ", upParams)
+			fmt.Printf("请传入传入的对应 -up参数：%v ", upParams)
 		}
 		os.Exit(0)
 	}
 	// -up 参数为空，启动bot
 	if ddConfig.TgBotToken == "" || ddConfig.TgUserID == 0 {
-		log.Printf("Telegram Bot相关环境变量配置不完整，故不启动。(botToken=%v;tgUserID=%v)", TgBotToken, TgUserID)
+		fmt.Printf("Telegram Bot相关环境变量配置不完整，故不启动。(botToken=%v;tgUserID=%v)", TgBotToken, TgUserID)
 		os.Exit(0)
 	}
 

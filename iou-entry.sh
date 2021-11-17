@@ -11,7 +11,7 @@ export DD_DATA_DIR="$MNT_DIR/dd_data"
 export SCRIPTS_REPO_BASE_DIR="$REPOS_DIR/dd_scripts"
 
 if [ -d $DD_DATA_DIR ]; then
-    echo "[$DD_DATA_DIR]数据存放目录，请自行检查配置文件是否正确完整..."
+    echo "数据存放目录[$DD_DATA_DIR]已存在，请自行检查配置文件是否正确完整..."
     if [ ! -d "$DD_DATA_DIR/custom_scripts" ]; then
         mkdir -p $DD_DATA_DIR/custom_scripts
     fi
@@ -66,19 +66,20 @@ else
 fi
 
 # 判断平台架构使用对应平台版本的ddbot
-echo "目前只构建三个平台（and64,arm64,arm）的ddbot，其他架构平台暂未发现使用者，如果有欢迎上报，并且只知道arch为x86_64(amd64)，aarch64(arm64)所以其他的就归到arm上"
+echo "目前只构建三个平台（amd64,arm64,arm）的ddbot，其他架构平台暂未发现使用者，如果有欢迎上报，并且只知道arch为x86_64(amd64)，aarch64(arm64)所以其他的就归到arm上"
 if [ "$(arch)" == "x86_64" ]; then
-    echo "amd64"
+    echo "当前容器运行于amd64平台"
     cp $PWD/ddbot/ddbot-amd64 /usr/local/bin/ddbot
 elif [ "$(arch)" == "aarch64" ]; then
-    echo "arm64"
+    echo "当前容器运行于arm64平台"
     cp $PWD/ddbot/ddbot-arm64 /usr/local/bin/ddbot
 else
-    echo "arm"
+    echo "当前容器运行于arm平台"
     cp $PWD/ddbot/ddbot-arm /usr/local/bin/ddbot
 fi
 chmod +x /usr/local/bin/ddbot
 
 echo "开始同步仓库dd_scripts..."
-ddbot -up syncRepo
+sleep 2
+ddbot -up syncRepo | sed -e "s|^|[$PWD-->exec ddbot sync repo] |"
 echo "dd_scripts仓库完成..."

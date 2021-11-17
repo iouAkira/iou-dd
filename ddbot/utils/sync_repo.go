@@ -5,7 +5,6 @@ import (
 	"ddbot/models"
 	"fmt"
 	"github.com/go-git/go-git/v5"
-	"log"
 	"os"
 	"os/exec"
 	"runtime/debug"
@@ -26,21 +25,21 @@ func SyncRepo(config *models.DDEnv) {
 	if CloneRepoCheck() {
 		baseScriptsPath := config.RepoBaseDir
 		if CheckDirOrFileIsExist(baseScriptsPath) {
-			log.Printf("脚本仓库目录已存在，执行pull")
+			fmt.Printf("脚本仓库目录已存在，执行pull")
 			repoPull(baseScriptsPath)
 		} else {
-			log.Printf("脚本仓库目录不存在，执行clone")
+			fmt.Printf("脚本仓库目录不存在，执行clone")
 			repoClone(repoUrl, baseScriptsPath)
 		}
 	} else {
-		log.Printf("为了避免程序内置的用户名密码被滥用，所以会有使用场景检查，当前环境不符合使用要求。")
+		fmt.Printf("为了避免程序内置的用户名密码被滥用，所以会有使用场景检查，当前环境不符合使用要求。")
 	}
 }
 
 func repoClone(url string, directory string) {
 
 	// Clone the given repository to the given directory
-	log.Printf("git clone %s to %s", url, directory)
+	fmt.Printf("git clone %s to %s", url, directory)
 
 	r, err := git.PlainClone(directory, false, &git.CloneOptions{
 		Auth: &http.BasicAuth{
@@ -89,11 +88,11 @@ func repoPull(path string) {
 		}})
 	if errPull != nil {
 		if errPull.Error() == "already up-to-date" {
-			log.Printf("已经是最新代码，暂无更新。")
+			fmt.Printf("已经是最新代码，暂无更新。")
 		} else if errPull.Error() == "authentication required" {
-			log.Printf("用户密码登陆失败，更新失败。")
+			fmt.Printf("用户密码登陆失败，更新失败。")
 		} else {
-			log.Printf(errPull.Error())
+			fmt.Printf(errPull.Error())
 		}
 	} else {
 		CheckIfError(errPull)
@@ -103,7 +102,7 @@ func repoPull(path string) {
 
 		commit, errC := r.CommitObject(ref.Hash())
 		CheckIfError(errC)
-		log.Printf("%v", commit)
+		fmt.Printf("%v", commit)
 	}
 }
 
@@ -122,13 +121,13 @@ func resetHard(path string) {
 	command.Stdout = &outInfo
 	err := command.Start()
 	if err != nil {
-		log.Printf(err.Error())
+		fmt.Printf(err.Error())
 	}
 	if err = command.Wait(); err != nil {
-		log.Printf(err.Error())
+		fmt.Printf(err.Error())
 	} else {
 		//fmt.Println(command.ProcessState.Pid())
 		//fmt.Println(command.ProcessState.Sys().(syscall.WaitStatus).ExitStatus())
-		log.Printf("还原本地修改（新增文件不受影响）防止更新冲突.....\n%v", outInfo.String())
+		fmt.Printf("还原本地修改（新增文件不受影响）防止更新冲突.....\n%v", outInfo.String())
 	}
 }
