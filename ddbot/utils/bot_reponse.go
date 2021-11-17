@@ -1,19 +1,23 @@
 package utils
 
 import (
-	"ddbot/models"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"strings"
-
+	
+	"ddbot/models"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-// help帮助
-func Help(chatID int64, bot *tgbotapi.BotAPI, config *models.DDEnv) {
+// Help
+// @description   bot交互help,start指令响应
+// @auth       iouAkira
+// @param1     chatID	int64
+// @param2     bot		*tgbotapi.BotAPI
+func Help(chatID int64, bot *tgbotapi.BotAPI) {
 	readme := "使用帮助说明" +
 		"\n\n/spnode 选择执行JS脚本文件" +
 		"\n/logs 选择下载日志文件" +
@@ -28,9 +32,9 @@ func Help(chatID int64, bot *tgbotapi.BotAPI, config *models.DDEnv) {
 		"\n/renew 通过cookies_wskey.list的wskey更新cookies.list 例如：/renew 1  更行cookies_wskey.list里面的第一个ck"
 
 	helpMsg := tgbotapi.NewMessage(chatID, readme)
-	log.Printf("处理前：%v", config.ReplyKeyBoard)
-	tkbs := MakeReplyKeyboard(config)
-	log.Printf("处理后：%v", config.ReplyKeyBoard)
+	log.Printf("处理前：%v", models.GlobalEnv.ReplyKeyBoard)
+	tkbs := MakeReplyKeyboard(models.GlobalEnv)
+	log.Printf("处理后：%v", models.GlobalEnv.ReplyKeyBoard)
 
 	helpMsg.ReplyMarkup = tkbs
 	log.Printf("tkbs：%v", tkbs)
@@ -39,21 +43,26 @@ func Help(chatID int64, bot *tgbotapi.BotAPI, config *models.DDEnv) {
 	}
 }
 
-func AddReplyKeyboard(akMsg *tgbotapi.Message, bot *tgbotapi.BotAPI, config *models.DDEnv) {
+// AddReplyKeyboard
+// @description   增加/更新快捷回复键盘指令
+// @auth       iouAkira
+// @param1     akMsg	*tgbotapi.Message
+// @param2     bot		*tgbotapi.BotAPI
+func AddReplyKeyboard(akMsg *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 	rkb := strings.TrimLeft(akMsg.Text[3:], " ")
 	if len(strings.Split(rkb, "===")) > 1 {
-		if !CheckDirOrFileIsExist(config.ReplyKeyboardFilePath) {
-			rkbFile, _ := os.Create(config.ReplyKeyboardFilePath)
+		if !CheckDirOrFileIsExist(models.GlobalEnv.ReplyKeyboardFilePath) {
+			rkbFile, _ := os.Create(models.GlobalEnv.ReplyKeyboardFilePath)
 			defer rkbFile.Close()
 		}
-		optMsg, err := ReplyKeyboardFileOpt(config.ReplyKeyboardFilePath, rkb, strings.Split(rkb, "===")[0], "W", nil)
+		optMsg, err := ReplyKeyboardFileOpt(rkb, strings.Split(rkb, "===")[0], "W")
 		if err != nil {
 			akRespMsg := tgbotapi.NewMessage(akMsg.Chat.ID, err.Error())
 			akRespMsg.ReplyToMessageID = akMsg.MessageID
 			bot.Send(akRespMsg)
 		} else {
 			akRespMsgText := fmt.Sprintf("`%v` 快捷回复配置`%v`成功✅", rkb, optMsg)
-			tkbs := MakeReplyKeyboard(config)
+			tkbs := MakeReplyKeyboard(models.GlobalEnv)
 			akRespMsg := tgbotapi.NewMessage(akMsg.Chat.ID, akRespMsgText)
 			akRespMsg.ReplyToMessageID = akMsg.MessageID
 			akRespMsg.ReplyMarkup = tkbs
@@ -67,15 +76,20 @@ func AddReplyKeyboard(akMsg *tgbotapi.Message, bot *tgbotapi.BotAPI, config *mod
 	}
 }
 
-func DelReplyKeyboard(dkMsg *tgbotapi.Message, bot *tgbotapi.BotAPI, config *models.DDEnv) {
+// DelReplyKeyboard
+// @description   删除快捷回复键盘指令
+// @auth       iouAkira
+// @param1     akMsg	*tgbotapi.Message
+// @param2     bot		*tgbotapi.BotAPI
+func DelReplyKeyboard(dkMsg *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 	rkb := strings.TrimLeft(dkMsg.Text[3:], " ")
 	if len(strings.Split(rkb, "===")) == 1 {
-		if !CheckDirOrFileIsExist(config.ReplyKeyboardFilePath) {
+		if !CheckDirOrFileIsExist(models.GlobalEnv.ReplyKeyboardFilePath) {
 			dkRespMsg := tgbotapi.NewMessage(dkMsg.Chat.ID, "不存在快捷回复配置文件，无法删除不存在的东西⚠️")
 			dkRespMsg.ReplyToMessageID = dkMsg.MessageID
 			bot.Send(dkRespMsg)
 		}
-		optMsg, err := ReplyKeyboardFileOpt(config.ReplyKeyboardFilePath, rkb, rkb, "D", config.ReplyKeyBoard)
+		optMsg, err := ReplyKeyboardFileOpt(rkb, rkb, "D")
 		if err != nil {
 			dkRespMsg := tgbotapi.NewMessage(dkMsg.Chat.ID, err.Error())
 			dkRespMsg.ReplyToMessageID = dkMsg.MessageID
@@ -89,7 +103,7 @@ func DelReplyKeyboard(dkMsg *tgbotapi.Message, bot *tgbotapi.BotAPI, config *mod
 				bot.Send(dkRespMsg)
 			} else {
 				dkRespMsgText := fmt.Sprintf("`%v` 快捷回复配置`%v`成功✅", rkb, optMsg)
-				tkbs := MakeReplyKeyboard(config)
+				tkbs := MakeReplyKeyboard(models.GlobalEnv)
 				dkRespMsg := tgbotapi.NewMessage(dkMsg.Chat.ID, dkRespMsgText)
 				dkRespMsg.ReplyToMessageID = dkMsg.MessageID
 				dkRespMsg.ReplyMarkup = tkbs
@@ -104,7 +118,11 @@ func DelReplyKeyboard(dkMsg *tgbotapi.Message, bot *tgbotapi.BotAPI, config *mod
 	}
 }
 
-//清除快速回复键盘
+// ClearReplyKeyboard
+// @description   清楚所有快捷回复键盘指令
+// @auth       iouAkira
+// @param1     akMsg	*tgbotapi.Message
+// @param2     bot		*tgbotapi.BotAPI
 func ClearReplyKeyboard(clkMsg *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 	tgbotapi.NewRemoveKeyboard(true)
 	clkRespMsg := tgbotapi.NewMessage(clkMsg.Chat.ID, "快捷回复键盘已清除🆑")
@@ -119,16 +137,20 @@ func ClearReplyKeyboard(clkMsg *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 
 }
 
-//handlerCallBackOption 响应bot接收到文件类型消息
-func HandlerDocumentMsg(docMsg *tgbotapi.Message, bot *tgbotapi.BotAPI, config *models.DDEnv) {
-	if CheckDirOrFileIsExist(config.CustomFilePath) {
-		os.MkdirAll(config.CustomFilePath, os.ModePerm)
+// HandlerDocumentMsg
+// @description   响应bot接收到文件类型消息
+// @auth       iouAkira
+// @param1     akMsg	*tgbotapi.Message
+// @param2     bot		*tgbotapi.BotAPI
+func HandlerDocumentMsg(docMsg *tgbotapi.Message, bot *tgbotapi.BotAPI) {
+	if CheckDirOrFileIsExist(models.GlobalEnv.CustomFilePath) {
+		os.MkdirAll(models.GlobalEnv.CustomFilePath, os.ModePerm)
 	}
 	docF := docMsg.Document
 	fileSuffix := strings.ReplaceAll(path.Ext(docF.FileName), ".", "")
 	var keyboardMarkup tgbotapi.InlineKeyboardMarkup
 	if fileSuffix == "js" || fileSuffix == "sh" || fileSuffix == "py" {
-		if CheckDirOrFileIsExist(fmt.Sprintf("%v/%v", config.CustomFilePath, docF.FileName)) {
+		if CheckDirOrFileIsExist(fmt.Sprintf("%v/%v", models.GlobalEnv.CustomFilePath, docF.FileName)) {
 			var existsRow []tgbotapi.InlineKeyboardButton
 			existsRow = append(existsRow, tgbotapi.NewInlineKeyboardButtonData("覆盖仅保存💾", fmt.Sprintf("%vFileSave replace", fileSuffix)))
 			existsRow = append(existsRow, tgbotapi.NewInlineKeyboardButtonData("覆盖保存并执行⚡️", fmt.Sprintf("%vFileSaveRun replace", fileSuffix)))
@@ -144,7 +166,7 @@ func HandlerDocumentMsg(docMsg *tgbotapi.Message, bot *tgbotapi.BotAPI, config *
 			keyboardMarkup.InlineKeyboard = append(keyboardMarkup.InlineKeyboard, existsRow)
 		}
 		keyboardMarkup.InlineKeyboard = append(keyboardMarkup.InlineKeyboard, tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("取消", "cancel")))
-		respMsg := tgbotapi.NewMessage(docMsg.Chat.ID, fmt.Sprintf("文件保存路径为`%v`，该路径在容器挂载目录内，方便查看，且同时会在`%v`保存一份方便执行调用。\n\n请选择对`%v`文件的操作️", config.CustomFilePath, config.SpnodeBtnFilePath, docF.FileName))
+		respMsg := tgbotapi.NewMessage(docMsg.Chat.ID, fmt.Sprintf("文件保存路径为`%v`，该路径在容器挂载目录内，方便查看，且同时会在`%v`保存一份方便执行调用。\n\n请选择对`%v`文件的操作️", models.GlobalEnv.CustomFilePath, models.GlobalEnv.SpnodeBtnFilePath, docF.FileName))
 		respMsg.ReplyMarkup = keyboardMarkup
 		respMsg.ReplyToMessageID = docMsg.MessageID
 		respMsg.ParseMode = tgbotapi.ModeMarkdown
@@ -157,14 +179,18 @@ func HandlerDocumentMsg(docMsg *tgbotapi.Message, bot *tgbotapi.BotAPI, config *
 	}
 }
 
-// unknownsCommand 响应未知指令
-func UnknownsCommand(unCmdMsg *tgbotapi.Message, bot *tgbotapi.BotAPI, config *models.DDEnv) {
-	if config.ReplyKeyBoard[unCmdMsg.Text] != "" {
-		mapCmd := config.ReplyKeyBoard[unCmdMsg.Text][1:]
-		LofDevLog(config.ReplyKeyBoard[unCmdMsg.Text])
+// UnknownsCommand
+// @description   响应未知指令
+// @auth       iouAkira
+// @param1     akMsg	*tgbotapi.Message
+// @param2     bot		*tgbotapi.BotAPI
+func UnknownsCommand(unCmdMsg *tgbotapi.Message, bot *tgbotapi.BotAPI) {
+	if models.GlobalEnv.ReplyKeyBoard[unCmdMsg.Text] != "" {
+		mapCmd := models.GlobalEnv.ReplyKeyBoard[unCmdMsg.Text][1:]
+		LofDevLog(models.GlobalEnv.ReplyKeyBoard[unCmdMsg.Text])
 		switch strings.Split(mapCmd, " ")[0] {
 		case "help", "start":
-			Help(unCmdMsg.Chat.ID, bot, config)
+			Help(unCmdMsg.Chat.ID, bot)
 		//case "spnode":
 		//	execSpnode(unCmdMsg, bot, replyKeyBoard[unCmdMsg.Text])
 		//case "logs":
@@ -189,8 +215,12 @@ func UnknownsCommand(unCmdMsg *tgbotapi.Message, bot *tgbotapi.BotAPI, config *m
 	}
 }
 
-//handlerCallBackOption 响应bot消息的交互按钮指令
-func HandlerCallBackOption(callbackQuery *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI, config *models.DDEnv) {
+// HandlerCallBackOption
+// @description   响应聊天信息里的按钮点击事件
+// @auth       iouAkira
+// @param1     callbackQuery	*tgbotapi.CallbackQuery
+// @param2     bot		*tgbotapi.BotAPI
+func HandlerCallBackOption(callbackQuery *tgbotapi.CallbackQuery, bot *tgbotapi.BotAPI) {
 	fileOptions := []string{"jsFileSave",
 		"jsFileSaveRun",
 		"shFileSave",
@@ -265,7 +295,7 @@ func HandlerCallBackOption(callbackQuery *tgbotapi.CallbackQuery, bot *tgbotapi.
 			respMsg := tgbotapi.NewEditMessageText(callbackQuery.Message.Chat.ID, callbackQuery.Message.MessageID, fmt.Sprintf("`/%v` 正在执行⚡️", strings.Join(cbDataSplit, " ")))
 			respMsg.ParseMode = tgbotapi.ModeMarkdown
 			respMsgInfo, _ := bot.Send(respMsg)
-			execResult, isFile, err := ExecCommand(cbDataSplit, cbDataSplit[0], config.LogsBtnFilePath)
+			execResult, isFile, err := ExecCommand(cbDataSplit, cbDataSplit[0], models.GlobalEnv.LogsBtnFilePath)
 			if err != nil {
 				log.Println(err)
 				if isFile {

@@ -2,7 +2,6 @@ package utils
 
 import (
 	"crypto/tls"
-	"ddbot/models"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,7 +13,8 @@ import (
 	"sort"
 	"strings"
 	"time"
-
+	
+	"ddbot/models"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -23,6 +23,10 @@ const (
 	RETURN string = "return"
 )
 
+// MakeReplyKeyboard
+// @description   构建快捷回复按钮
+// @auth       iouAkira
+// @param1     config *models.DDEnv
 func MakeReplyKeyboard(config *models.DDEnv) tgbotapi.ReplyKeyboardMarkup {
 	if CheckDirOrFileIsExist(config.ReplyKeyboardFilePath) {
 		cookiesFile, err := ioutil.ReadFile(config.ReplyKeyboardFilePath)
@@ -65,6 +69,10 @@ func MakeReplyKeyboard(config *models.DDEnv) tgbotapi.ReplyKeyboardMarkup {
 	return replyKeyboards
 }
 
+// LoadReplyKeyboardMap
+// @description   更新快捷回复按钮全局配置
+// @auth       iouAkira
+// @param1     config *models.DDEnv
 func LoadReplyKeyboardMap(config *models.DDEnv) {
 	if CheckDirOrFileIsExist(config.ReplyKeyboardFilePath) {
 		cookiesFile, err := ioutil.ReadFile(config.ReplyKeyboardFilePath)
@@ -81,6 +89,10 @@ func LoadReplyKeyboardMap(config *models.DDEnv) {
 	}
 }
 
+// UploadShareCode
+// @description
+// @auth       iouAkira
+// @param1     config *models.DDEnv
 func UploadShareCode(ddConfig *models.DDEnv) {
 	confFilePath := fmt.Sprintf("%v/dd_sharecode.json", ddConfig.RepoBaseDir)
 	if CheckDirOrFileIsExist(confFilePath) {
@@ -145,12 +157,14 @@ func UploadShareCode(ddConfig *models.DDEnv) {
 	}
 }
 
-// RenewAllCookie 命令行调用函数
-func RenewAllCookie(ddConfig *models.DDEnv) {
-	wskeyFile, err := ioutil.ReadFile(ddConfig.CookiesWSKeyListFilePath)
+// RenewAllCookie
+// @description   更新所有cookie
+// @auth       iouAkira
+func RenewAllCookie() {
+	wskeyFile, err := ioutil.ReadFile(models.GlobalEnv.CookiesWSKeyListFilePath)
 
 	renewSleep := "Y"
-	envRenewSleep := GetEnvFromEnvFile(ddConfig.EnvFilePath, "RENEW_SLEEP")
+	envRenewSleep := GetEnvFromEnvFile(models.GlobalEnv.EnvFilePath, "RENEW_SLEEP")
 	if envRenewSleep != "" {
 		renewSleep = envRenewSleep
 	}
@@ -175,7 +189,7 @@ func RenewAllCookie(ddConfig *models.DDEnv) {
 				pin = strings.ReplaceAll(pin, ";", "")
 			}
 
-			reNewCk, renewErr := RenewCookie(lines[i], ddConfig)
+			reNewCk, renewErr := RenewCookie(lines[i])
 			if renewErr != nil || reNewCk == "" || strings.Contains(reNewCk, "pt_key=fake_") {
 				if strings.Contains(reNewCk, "pt_key=fake_") {
 					log.Printf("续期【账号%v】Cookie失败❌ =====> wskey 已经失效", pin)
@@ -185,7 +199,7 @@ func RenewAllCookie(ddConfig *models.DDEnv) {
 				failedCnt += 1
 			} else {
 				log.Printf("续期【账号%v】 Cookie成功✅️", pin)
-				if errW := WriteCookiesFile(reNewCk, ddConfig.CookiesListFilePath); errW == nil {
+				if errW := writeCookiesFile(reNewCk); errW == nil {
 					log.Printf("写入 cookies.list 成功✅")
 					log.Printf("账户(%v) Cookie续期操作已完成✅", pin)
 					succCnt += 1
@@ -204,17 +218,21 @@ func RenewAllCookie(ddConfig *models.DDEnv) {
 	log.Printf("renewCookie续期任务已完成✅【续期成功：%v 个；续期失败：%v 个】", succCnt, failedCnt)
 }
 
-func RenewCookie(wskey string, ddConfig *models.DDEnv) (string, error) {
+// RenewAllCookie
+// @description   根据传入的wskey更新对应cookie
+// @auth       	iouAkira
+// @param		wskey string
+func RenewCookie(wskey string) (string, error) {
 	renewCK := ""
 	//默认签名UA配置
 	body := "body=%7B%22to%22%3A%22https%3A%5C%2F%5C%2Fplogin.m.jd.com%5C%2Fcgi-bin%5C%2Fm%5C%2Fthirdapp_auth_page%3Ftoken%3DAAEAIEbEUWDGA_SGHg4sHM5fwfnpt-kFtkZ_boToZQULiH0O%26client_type%3Dapple%26appid%3D1125%26appup_type%3D1%22%2C%22action%22%3A%22to%22%7D"
 	sign := "sign=71d364d8bfb90d9d8d2e68385da86671&st=1630423869687&sv=122"
 	renewUA := "JD4iPhone/167761 (iPhone; iOS 15.0; Scale/3.00)"
 	//读取环境变量签名UA配置
-	envBody := GetEnvFromEnvFile(ddConfig.EnvFilePath, "RENEW_BODY")
-	envSign := GetEnvFromEnvFile(ddConfig.EnvFilePath, "RENEW_SIGN")
-	envFullBodyAndSign := GetEnvFromEnvFile(ddConfig.EnvFilePath, "RENEW_FULL_BODY_SIGN")
-	envUA := GetEnvFromEnvFile(ddConfig.EnvFilePath, "RENEW_UA")
+	envBody := GetEnvFromEnvFile(models.GlobalEnv.EnvFilePath, "RENEW_BODY")
+	envSign := GetEnvFromEnvFile(models.GlobalEnv.EnvFilePath, "RENEW_SIGN")
+	envFullBodyAndSign := GetEnvFromEnvFile(models.GlobalEnv.EnvFilePath, "RENEW_FULL_BODY_SIGN")
+	envUA := GetEnvFromEnvFile(models.GlobalEnv.EnvFilePath, "RENEW_UA")
 
 	if envBody != "" {
 		body = envBody
@@ -314,11 +332,14 @@ func RenewCookie(wskey string, ddConfig *models.DDEnv) (string, error) {
 	return renewCK, backErrMsg
 }
 
-// WriteCookiesFile
-func WriteCookiesFile(newCookie string, cookiesFilePath string) error {
-	if CheckDirOrFileIsExist(cookiesFilePath) {
+// writeCookiesFile
+// @description 将传入的 cookie 写入文件
+// @auth       	iouAkira
+// @param		wskey string
+func writeCookiesFile(newCookie string) error {
+	if CheckDirOrFileIsExist(models.GlobalEnv.CookiesListFilePath) {
 		isReplace := false
-		cookiesFile, err := ioutil.ReadFile(cookiesFilePath)
+		cookiesFile, err := ioutil.ReadFile(models.GlobalEnv.CookiesListFilePath)
 		if err != nil {
 			log.Printf("读取cookies.list文件出错。。%s", err)
 			return errors.New(fmt.Sprintf("读取cookies.list文件出错❌\n%v", err))
@@ -340,14 +361,14 @@ func WriteCookiesFile(newCookie string, cookiesFilePath string) error {
 
 		output = fmt.Sprintf("%v\n", strings.Join(lines, "\n"))
 
-		err = ioutil.WriteFile(cookiesFilePath, []byte(output), 0644)
+		err = ioutil.WriteFile(models.GlobalEnv.CookiesListFilePath, []byte(output), 0644)
 		if err != nil {
 			log.Printf("写入cookies.list文件出错 %s", err)
 			return errors.New(fmt.Sprintf("写入cookies.list文件出错❌\n%v", err))
 		}
 		return nil
 	} else {
-		return errors.New(fmt.Sprintf("%v文件不存在⚠️", cookiesFilePath))
+		return errors.New(fmt.Sprintf("%v文件不存在⚠️", models.GlobalEnv.CookiesListFilePath))
 	}
 
 }

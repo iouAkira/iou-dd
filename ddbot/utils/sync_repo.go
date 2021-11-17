@@ -2,13 +2,13 @@ package utils
 
 import (
 	"bytes"
-	"ddbot/models"
 	"fmt"
-	"github.com/go-git/go-git/v5"
 	"os"
 	"os/exec"
 	"runtime/debug"
 
+	"ddbot/models"
+	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
@@ -21,6 +21,10 @@ var (
 	gitToken = "compile_git_token"
 )
 
+// SyncRepo
+// @description	根据传入仓库信息配置，同步仓库
+// @auth	@iouAkira
+// @param1  config *models.DDEnv
 func SyncRepo(config *models.DDEnv) {
 	if CloneRepoCheck() {
 		baseScriptsPath := config.RepoBaseDir
@@ -36,8 +40,12 @@ func SyncRepo(config *models.DDEnv) {
 	}
 }
 
+// repoClone
+// @description	根据传入仓库信息配置，clone仓库
+// @auth	@iouAkira
+// @param1     url string
+// @param2     directory string
 func repoClone(url string, directory string) {
-
 	// Clone the given repository to the given directory
 	fmt.Printf("git clone %s to %s", url, directory)
 
@@ -61,6 +69,10 @@ func repoClone(url string, directory string) {
 	fmt.Println(commit)
 }
 
+// pullRepo
+// @description	根据传入仓库信息配置，更新仓库
+// @auth	@iouAkira
+// @param1     repoPath string
 func repoPull(path string) {
 	//对异常状态进行补货并输出到缓冲区
 	defer func() {
@@ -106,6 +118,10 @@ func repoPull(path string) {
 	}
 }
 
+// resetHard
+// @description	根据传入仓库流经还原本地修改，防止更新仓库冲突
+// @auth	@iouAkira
+// @param     repoPath string
 func resetHard(path string) {
 	//var execResult string
 	var cmdArguments []string

@@ -11,7 +11,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
+	
+	"ddbot/models"
 	"github.com/go-cmd/cmd"
 )
 
@@ -87,13 +88,20 @@ func ExecCommand(botCmd []string, cmdType string, logsPath string) (string, bool
 	return execResult, isFile, finalStatus.Error
 }
 
-func ReplyKeyboardFileOpt(filePath string, rkb string, optKey string, opt string, board map[string]string) (string, error) {
+// ReplyKeyboardFileOpt
+// @description   更新/删除全局变量里面的快捷回复配置文件
+// @auth      iouAkira
+// @param1     filePath string 文件路径
+// @param2     rkb string 快捷回复键盘文本
+// @param3     optKey string 快捷回复键盘文本对应的命令
+// @return    string 返回操作结果
+func ReplyKeyboardFileOpt(rkb string, optKey string, opt string) (string, error) {
 	optMsg := ""
 	isReplace := false
-	cookiesFile, err := ioutil.ReadFile(filePath)
+	cookiesFile, err := ioutil.ReadFile(models.GlobalEnv.ReplyKeyboardFilePath)
 	if err != nil {
-		log.Printf("读取%v快捷回复配置文件出错。。%v", filePath, err)
-		return "", errors.New(fmt.Sprintf("读取%v快捷回复配置文件出错❌\n%v", filePath, err))
+		log.Printf("读取%v快捷回复配置文件出错。。%v", models.GlobalEnv.ReplyKeyboardFilePath, err)
+		return "", errors.New(fmt.Sprintf("读取%v快捷回复配置文件出错❌\n%v", models.GlobalEnv.ReplyKeyboardFilePath, err))
 	}
 	lines := strings.Split(string(cookiesFile), "\n")
 	for i, line := range lines {
@@ -108,7 +116,7 @@ func ReplyKeyboardFileOpt(filePath string, rkb string, optKey string, opt string
 				isReplace = true
 				lines[i] = ""
 				optMsg = "删除"
-				delete(board, optKey)
+				delete(models.GlobalEnv.ReplyKeyBoard, optKey)
 			} else if opt == "W" {
 				isReplace = true
 				lines[i] = rkb
@@ -128,10 +136,10 @@ func ReplyKeyboardFileOpt(filePath string, rkb string, optKey string, opt string
 	var output string
 	output = fmt.Sprintf("%v\n", strings.Join(RemoveZero(lines), "\n"))
 
-	err = ioutil.WriteFile(filePath, []byte(output), 0644)
+	err = ioutil.WriteFile(models.GlobalEnv.ReplyKeyboardFilePath, []byte(output), 0644)
 	if err != nil {
-		log.Printf("写入%v快捷回复配置文件 %v", filePath, err)
-		return "", errors.New(fmt.Sprintf("写入%v快捷回复配置文件❌\n%v", filePath, err))
+		log.Printf("写入%v快捷回复配置文件 %v", models.GlobalEnv.ReplyKeyboardFilePath, err)
+		return "", errors.New(fmt.Sprintf("写入%v快捷回复配置文件❌\n%v", models.GlobalEnv.ReplyKeyboardFilePath, err))
 	}
 	return optMsg, nil
 }
@@ -158,40 +166,6 @@ func GetEnvFromEnvFile(envFilePath string, envName string) string {
 		}
 	}
 	return ""
-}
-
-// LofDevLog 打印开发调试日志
-func LofDevLog(format string, v ...interface{}) {
-	printLog := false
-	envPrintLog := LofDevLogGetEnvFromEnvFile("/data/env.sh", "LOF_DEV_LOG")
-	envPrintLog = "true"
-	if envPrintLog == "true" {
-		printLog = true
-	}
-	if printLog {
-		log.Printf(format, v...)
-	}
-}
-func LofDevLogGetEnvFromEnvFile(envFilePath string, envName string) string {
-	env, err := ioutil.ReadFile(envFilePath)
-	if err != nil {
-		//log.Printf("读取开发模式日志打印配置参数异常")
-		return ""
-	}
-	lines := strings.Split(string(env), "\n")
-	for _, line := range lines {
-		if strings.Contains(line, fmt.Sprintf(" %v=", envName)) && strings.HasPrefix(line, "export") {
-			r := regexp.MustCompile(`(` + envName + `=\"|` + envName + ` =\"|` + envName + `=\'|` + envName + ` =\')(.*)(\"|\')`)
-			uaMatch := r.FindStringSubmatch(line)
-			//log.Printf("%v match ==> %v", envName, uaMatch)
-			if len(uaMatch) >= 3 {
-				envValue := uaMatch[2]
-				return envValue
-			}
-		}
-	}
-	return ""
-
 }
 
 // CheckDirOrFileIsExist
@@ -238,7 +212,10 @@ func RemoveRepByLoop(slc []string) []string {
 	return result
 }
 
-// RemoveZero 清除切片里面的零值
+// RemoveZero
+// @description 清除切片里面的零值
+// @auth      iouAkira
+// @param	  slice []string
 func RemoveZero(slice []string) []string {
 	if len(slice) == 0 {
 		return slice
@@ -268,7 +245,10 @@ func RemoveRepByMap(slc []string) []string {
 	return result
 }
 
-// IfZero 判断一个值是否为零值，只支持string,float,int,time 以及其各自的指针，"%"和"%%"也属于零值范畴，场景是like语句
+// IfZero
+// @description 判断一个值是否为零值，只支持string,float,int,time 以及其各自的指针，"%"和"%%"也属于零值范畴，场景是like语句
+// @auth      iouAkira
+// @param 	  arg interface{}
 func IfZero(arg interface{}) bool {
 	if arg == nil {
 		return true
@@ -299,6 +279,19 @@ func IfZero(arg interface{}) bool {
 	return false
 }
 
+// RandomString
+// @description 获取指定长度的随机字符串
+// @auth      iouAkira
+// @param 	  n int
+func RandomString(n int) string {
+	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
+
 // CheckIfError should be used to naively panics if an error is not nil.
 func CheckIfError(err error) {
 	if err == nil {
@@ -308,12 +301,36 @@ func CheckIfError(err error) {
 	os.Exit(1)
 }
 
-// RandomString 获取指定长度的随机字符串
-func RandomString(n int) string {
-	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+// LofDevLog 打印开发调试日志
+func LofDevLog(format string, v ...interface{}) {
+	printLog := false
+	envPrintLog := LofDevLogGetEnvFromEnvFile("/data/env.sh", "LOF_DEV_LOG")
+	envPrintLog = "true"
+	if envPrintLog == "true" {
+		printLog = true
 	}
-	return string(b)
+	if printLog {
+		log.Printf(format, v...)
+	}
+}
+func LofDevLogGetEnvFromEnvFile(envFilePath string, envName string) string {
+	env, err := ioutil.ReadFile(envFilePath)
+	if err != nil {
+		//log.Printf("读取开发模式日志打印配置参数异常")
+		return ""
+	}
+	lines := strings.Split(string(env), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, fmt.Sprintf(" %v=", envName)) && strings.HasPrefix(line, "export") {
+			r := regexp.MustCompile(`(` + envName + `=\"|` + envName + ` =\"|` + envName + `=\'|` + envName + ` =\')(.*)(\"|\')`)
+			uaMatch := r.FindStringSubmatch(line)
+			//log.Printf("%v match ==> %v", envName, uaMatch)
+			if len(uaMatch) >= 3 {
+				envValue := uaMatch[2]
+				return envValue
+			}
+		}
+	}
+	return ""
+
 }
