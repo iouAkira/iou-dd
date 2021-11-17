@@ -15,3 +15,5 @@ type DDEnv struct {
 	TgUserID                 int64
 	ReplyKeyBoard            map[string]string
 }
+
+var GlobalEnv = &DDEnv{}
