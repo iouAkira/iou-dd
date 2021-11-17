@@ -18,12 +18,12 @@ var bot *tgbotapi.BotAPI
 func main() {
 
 	// 读取加载程序需要使用的环境变量
-	pre_init.LoadEnv()
-	ddutils.ExecUpCommand()
+	upParams := pre_init.LoadEnv()
+	ddutils.ExecUpCommand(upParams)
 
 	// 启动bot
 	if models.GlobalEnv.TgBotToken == "" || models.GlobalEnv.TgUserID == 0 {
-		fmt.Printf("Telegram Bot相关环境变量配置不完整，故不启动。(botToken=%v;tgUserID=%v)", models.GlobalEnv.TgBotToken, models.GlobalEnv.TgUserID)
+		fmt.Printf("Telegram Bot相关环境变量配置不完整，故不启动。(botToken=%v;tgUserID=%v)\n", models.GlobalEnv.TgBotToken, models.GlobalEnv.TgUserID)
 		os.Exit(0)
 	}
 

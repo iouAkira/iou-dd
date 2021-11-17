@@ -8,11 +8,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-	"regexp"
 	"sort"
 	"strings"
-	"time"
 	
 	"ddbot/models"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -89,136 +86,7 @@ func LoadReplyKeyboardMap(config *models.DDEnv) {
 	}
 }
 
-// UploadShareCode
-// @description
-// @auth       iouAkira
-// @param1     config *models.DDEnv
-func UploadShareCode(ddConfig *models.DDEnv) {
-	confFilePath := fmt.Sprintf("%v/dd_sharecode.json", ddConfig.RepoBaseDir)
-	if CheckDirOrFileIsExist(confFilePath) {
-		conf, err := ioutil.ReadFile(confFilePath)
-		if err != nil {
-			log.Printf("读取配置文件异常`%v`  Error: %v", confFilePath, err)
-		}
-
-		shareCodeConf := models.ShareCode{}
-		//下面使用的是相对路径，config.json文件和main.go文件处于同一目录下
-		json.Unmarshal(conf, &shareCodeConf)
-		for _, codeInfo := range shareCodeConf.ShareCodeInfo {
-			// 针对使用仓库脚本校验,参数为公开的配置
-			if SubmitShareCodeCheck(ddConfig.RepoBaseDir, codeInfo) {
-				log.Printf("仓库使用检查失败，取消上传到助力池。", codeInfo.ShareCodeType)
-				continue
-			}
-			if os.Getenv(codeInfo.ShareCodeEnv) != "" || GetEnvFromEnvFile(ddConfig.EnvFilePath, codeInfo.ShareCodeEnv) != "" {
-				log.Printf("本地配置了[%v]互助码，取消上传到助力池。", codeInfo.ShareCodeType)
-				continue
-			}
-			logFile, lerr := ioutil.ReadFile(fmt.Sprintf("%v/%v", ddConfig.LogsBtnFilePath, codeInfo.LogFileName))
-			if lerr != nil {
-				log.Printf("读取日志文件异常[%v]  Error: %v", confFilePath, lerr)
-				continue
-			}
-			logLines := strings.Split(string(logFile), "\n")
-			var shareCode []string
-			for _, logLine := range logLines {
-				if strings.Contains(logLine, codeInfo.LogPrefix) {
-					matchShareCode := strings.Split(logLine, codeInfo.LogPrefix)
-					if len(matchShareCode) > 1 {
-						shareCode = append(shareCode, matchShareCode[len(matchShareCode)-1])
-					}
-				}
-			}
-			shareCode = RemoveRepByLoop(shareCode)
-			log.Println(shareCode)
-			// compile_submit_host 编译时传入
-			// compile_submit_token 编译时候传入
-			commitUrl := fmt.Sprintf("https://compile_submit_host/api/%v/add/%v", codeInfo.ShareCodeType, strings.Join(shareCode, "&"))
-			client := http.Client{}
-			req, _ := http.NewRequest("POST", commitUrl, nil)
-			req.Header.Add("Accept-Encoding", "identity")
-			req.Header.Add("Content-Type", "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW")
-			req.Header.Add("Host", "compile_submit_host")
-			req.Header.Add("Cookie", "compile_submit_token")
-
-			resp, perr := client.Do(req)
-			if perr != nil {
-				log.Printf("获取请求结果Body报错。。。%v", shareCode)
-				continue
-			}
-			if resp.StatusCode == 200 {
-				rbody, _ := ioutil.ReadAll(resp.Body)
-				log.Println(string(rbody))
-			}
-			resp.Body.Close()
-
-			time.Sleep(20 * time.Second)
-		}
-	}
-}
-
-// RenewAllCookie
-// @description   更新所有cookie
-// @auth       iouAkira
-func RenewAllCookie() {
-	wskeyFile, err := ioutil.ReadFile(models.GlobalEnv.CookiesWSKeyListFilePath)
-
-	renewSleep := "Y"
-	envRenewSleep := GetEnvFromEnvFile(models.GlobalEnv.EnvFilePath, "RENEW_SLEEP")
-	if envRenewSleep != "" {
-		renewSleep = envRenewSleep
-	}
-	if err != nil {
-		log.Printf("读取cookies文件出错。。%s", err)
-	}
-	lines := strings.Split(string(wskeyFile), "\n")
-	succCnt := 0
-	failedCnt := 0
-	for i := 0; i < len(lines); i++ {
-		if strings.HasPrefix(lines[i], "#") || lines[i] == "" {
-			continue
-		} else {
-			lines[i] = strings.ReplaceAll(lines[i], "\r", "")
-			pin := fmt.Sprintf("%v", i)
-
-			r := regexp.MustCompile(`^(pin=)\S.*?;`)
-			uaMatch := r.FindString(lines[i])
-			LofDevLog("==>>%v", uaMatch)
-			if uaMatch != "" {
-				pin = strings.ReplaceAll(uaMatch, "pin=", "")
-				pin = strings.ReplaceAll(pin, ";", "")
-			}
-
-			reNewCk, renewErr := RenewCookie(lines[i])
-			if renewErr != nil || reNewCk == "" || strings.Contains(reNewCk, "pt_key=fake_") {
-				if strings.Contains(reNewCk, "pt_key=fake_") {
-					log.Printf("续期【账号%v】Cookie失败❌ =====> wskey 已经失效", pin)
-				} else {
-					log.Printf("续期【账号%v】Cookie失败❌\n%v", pin, renewErr.Error())
-				}
-				failedCnt += 1
-			} else {
-				log.Printf("续期【账号%v】 Cookie成功✅️", pin)
-				if errW := writeCookiesFile(reNewCk); errW == nil {
-					log.Printf("写入 cookies.list 成功✅")
-					log.Printf("账户(%v) Cookie续期操作已完成✅", pin)
-					succCnt += 1
-					// }
-				} else {
-					log.Printf("（%v）写入 cookies.list 失败❌%v", reNewCk, errW.Error())
-					failedCnt += 1
-				}
-			}
-			if renewSleep == "Y" {
-				log.Printf("休息20秒。。。")
-				time.Sleep(10 * time.Second)
-			}
-		}
-	}
-	log.Printf("renewCookie续期任务已完成✅【续期成功：%v 个；续期失败：%v 个】", succCnt, failedCnt)
-}
-
-// RenewAllCookie
+// RenewCookie
 // @description   根据传入的wskey更新对应cookie
 // @auth       	iouAkira
 // @param		wskey string

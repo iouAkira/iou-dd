@@ -29,14 +29,14 @@ func SyncRepo(config *models.DDEnv) {
 	if CloneRepoCheck() {
 		baseScriptsPath := config.RepoBaseDir
 		if CheckDirOrFileIsExist(baseScriptsPath) {
-			fmt.Printf("脚本仓库目录已存在，执行pull")
+			fmt.Printf("脚本仓库目录已存在，执行pull\n")
 			repoPull(baseScriptsPath)
 		} else {
-			fmt.Printf("脚本仓库目录不存在，执行clone")
+			fmt.Printf("脚本仓库目录不存在，执行clone\n")
 			repoClone(repoUrl, baseScriptsPath)
 		}
 	} else {
-		fmt.Printf("为了避免程序内置的用户名密码被滥用，所以会有使用场景检查，当前环境不符合使用要求。")
+		fmt.Printf("为了避免程序内置的用户名密码被滥用，所以会有使用场景检查，当前环境不符合使用要求。\n")
 	}
 }
 
@@ -47,7 +47,7 @@ func SyncRepo(config *models.DDEnv) {
 // @param2     directory string
 func repoClone(url string, directory string) {
 	// Clone the given repository to the given directory
-	fmt.Printf("git clone %s to %s", url, directory)
+	fmt.Printf("git clone %s to %s\n", url, directory)
 
 	r, err := git.PlainClone(directory, false, &git.CloneOptions{
 		Auth: &http.BasicAuth{
@@ -100,9 +100,9 @@ func repoPull(path string) {
 		}})
 	if errPull != nil {
 		if errPull.Error() == "already up-to-date" {
-			fmt.Printf("已经是最新代码，暂无更新。")
+			fmt.Printf("已经是最新代码，暂无更新。\n")
 		} else if errPull.Error() == "authentication required" {
-			fmt.Printf("用户密码登陆失败，更新失败。")
+			fmt.Printf("用户密码登陆失败，更新失败。\n")
 		} else {
 			fmt.Printf(errPull.Error())
 		}
@@ -144,6 +144,6 @@ func resetHard(path string) {
 	} else {
 		//fmt.Println(command.ProcessState.Pid())
 		//fmt.Println(command.ProcessState.Sys().(syscall.WaitStatus).ExitStatus())
-		fmt.Printf("还原本地修改（新增文件不受影响）防止更新冲突.....\n%v", outInfo.String())
+		fmt.Printf("还原本地修改（新增文件不受影响）防止更新冲突.....\n%v\n", outInfo.String())
 	}
 }

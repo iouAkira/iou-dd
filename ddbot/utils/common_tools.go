@@ -310,7 +310,8 @@ func LofDevLog(format string, v ...interface{}) {
 		printLog = true
 	}
 	if printLog {
-		log.Printf(format, v...)
+		fmt.Printf(format, v...)
+		fmt.Printf("\n")
 	}
 }
 func LofDevLogGetEnvFromEnvFile(envFilePath string, envName string) string {
