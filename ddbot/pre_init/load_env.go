@@ -1,4 +1,4 @@
-package init
+package pre_init
 
 import (
 	"flag"

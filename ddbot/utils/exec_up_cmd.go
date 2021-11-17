@@ -32,7 +32,7 @@ func ExecUpCommand() {
 			}
 		} else if upParams == "renewCookie" {
 			fmt.Printf("启动程序指定了 -up 参数为 %v 开始给 %v 里面的全部wskey续期。", upParams, models.GlobalEnv.CookiesListFilePath)
-			RenewAllCookie(models.GlobalEnv)
+			RenewAllCookie()
 		} else {
 			fmt.Printf("请传入传入的对应 -up参数：%v ", upParams)
 		}
