@@ -1,8 +1,6 @@
 #!/bin/sh
 set -e
 
-apk add moreutils
-
 echo "数据挂载目录： [$MNT_DIR]"
 echo "仓库存放目录： [$REPOS_DIR]"
 echo "任务文件目录： [$CRON_FILE_DIR]"
@@ -111,7 +109,6 @@ else
     fi
 fi
 
-
 echo -e
 echo "[$DD_CRON_FILE_PATH] 定时任务处理逻辑顺序如下："
 echo "[$DD_CRON_FILE_PATH] 1：循环查找对应子目录脚本内的 crontab 配置"
@@ -144,7 +141,7 @@ findDirCronFile() {
             # echo "      #$cronName($findDir/$scriptFile)"
             # echo "      $cron node $findDir/$scriptFile >> $logDir/$(echo $scriptFile | sed "s/\.js/.log/g") 2>&1 &"
             echo "#$cronName($findDir/$scriptFile)" >>$DD_CRON_FILE_PATH
-            echo "$cron node $findDir/$scriptFile >> $logDir/$(echo $scriptFile | sed "s/\.js/.log/g") 2>&1 &" >>$DD_CRON_FILE_PATH
+            echo "$cron node $findDir/$scriptFile >>$logDir/$(echo $scriptFile | sed "s/\.js/.log/g") 2>&1 &" >>$DD_CRON_FILE_PATH
             echo "" >>$DD_CRON_FILE_PATH
             CRONFILES="$CRONFILES\|$scriptFile"
         fi
@@ -228,11 +225,11 @@ fi
 echo "[$DD_CRON_FILE_PATH]   "
 echo "[$DD_CRON_FILE_PATH]   处理替换 node 执行命令为 ddnode，增加 ts 输出日志时间"
 sed -i "s/ node / ddnode /g" $DD_CRON_FILE_PATH
-sed -i "/\(ddBot\| ts\| |ts\|| ts\)/!s/>>/\|ts >>/g" $DD_CRON_FILE_PATH
+sed -i "s/\(\| ts\| |ts\|| ts\)//g" $DD_CRON_FILE_PATH
+sed -i "/ddBot/!s/>>/\|sed -e \"s|^|\$(date +'%Y-%m-%d %H:%M:%S') | \" >>/g" $DD_CRON_FILE_PATH
 sed -i "/\(>&1 &\|> &1 &\)/!s/>&1/>\&1 \&/g" $DD_CRON_FILE_PATH
 sed -i "s|/data/logs|$DD_DATA_DIR/logs|g" $DD_CRON_FILE_PATH
 sed -i "s|/scripts/|$SCRIPTS_REPO_BASE_DIR/|g" $DD_CRON_FILE_PATH
-
 
 echo "" >>$DD_CRON_FILE_PATH
 echo "#↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ [$SCRIPTS_REPO_BASE_DIR] 仓库任务列表 ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑#" >>$DD_CRON_FILE_PATH
@@ -241,13 +238,13 @@ echo "[$DD_CRON_FILE_PATH] 任务处理完成..."
 echo -e
 
 echo "增加 submitShareCode.sh 脚本，用于清理日志，调用ddbot提交互助码到助力池..."
-sed -i "3 i sleep \$((RANDOM % 400)); sh $SCRIPTS_REPO_BASE_DIR/submitShareCode.sh | ts >>$logDir/logs/submitCode.log 2>&1 &" $DD_CRON_FILE_PATH
+sed -i "3 i sleep \$((RANDOM % 400)); sh $SCRIPTS_REPO_BASE_DIR/submitShareCode.sh |sed -e \"s|^|\$(date +'%Y-%m-%d %H:%M:%S') | \" >>$logDir/logs/submitCode.log 2>&1 &" $DD_CRON_FILE_PATH
 sed -i "4 i  " $DD_CRON_FILE_PATH
 (
     cat <<EOF
 #!/bin/sh
 set -e
-curr_dt=\$(date -R | awk '{print \$3" "\$2}')
+curr_dt=\$(date +'%Y-%m-%d' | awk '{print \$1}')
 echo "清除非当日(\$curr_dt)产生的日志，准备提交互助码码到助力池"
 for dd_log in \$(ls "$DD_DATA_DIR/logs/" | grep "^.*log\$" | grep -v "sharecode"); do
       sed -i "/^\$curr_dt.*/!d" "$DD_DATA_DIR/logs/\$dd_log"
