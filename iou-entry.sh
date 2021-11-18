@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+apk add moreutils
+
 echo "数据挂载目录： [$MNT_DIR]"
 echo "仓库存放目录： [$REPOS_DIR]"
 echo "任务文件目录： [$CRON_FILE_DIR]"
@@ -92,6 +94,24 @@ sleep 2
 ddbot -up syncRepo | sed -e "s|^|[->exec ddbot sync repo] |"
 echo "[dd_scripts]仓库同步完成..."
 
+cd $SCRIPTS_REPO_BASE_DIR
+
+echo "检查package.json依赖是否有更新..."
+if [ ! -d node_modules ]; then
+    echo -e "检测到首次部署, 运行 npm install..."
+    cat package.json >old_package.json
+    npm install --loglevel error --prefix
+else
+    if [ "$(cat old_package.json)" != "$(cat package.json)" ]; then
+        echo -e "检测到package.json有变化，运行 npm install..."
+        cat package.json >old_package.json
+        npm install --loglevel error --prefix
+    else
+        echo -e "检测到package.json无变化，跳过...\n"
+    fi
+fi
+
+
 echo -e
 echo "[$DD_CRON_FILE_PATH] 定时任务处理逻辑顺序如下："
 echo "[$DD_CRON_FILE_PATH] 1：循环查找对应子目录脚本内的 crontab 配置"
@@ -104,7 +124,8 @@ echo "[$DD_CRON_FILE_PATH] 7：替换 node 执行命令为 ddnode"
 echo "[$DD_CRON_FILE_PATH] 8：得到本仓库最终的定时任务配置文件"
 echo "[$DD_CRON_FILE_PATH] "
 echo "[$DD_CRON_FILE_PATH] 任务处理开始..."
-#排要扫面的文件crontab的文件名
+
+#排除要扫描的文件crontab的文件名
 excludeFile="smiek_jd_zdjr.js,JS_USER_AGENTS.js,JD_DailyBonus.js,JDJRValidator"
 logDir="$DD_DATA_DIR/logs"
 CRONFILES="xxx.js"
@@ -209,6 +230,9 @@ echo "[$DD_CRON_FILE_PATH]   处理替换 node 执行命令为 ddnode，增加 t
 sed -i "s/ node / ddnode /g" $DD_CRON_FILE_PATH
 sed -i "/\(ddBot\| ts\| |ts\|| ts\)/!s/>>/\|ts >>/g" $DD_CRON_FILE_PATH
 sed -i "/\(>&1 &\|> &1 &\)/!s/>&1/>\&1 \&/g" $DD_CRON_FILE_PATH
+sed -i "s|/data/logs|$DD_DATA_DIR/logs|g" $DD_CRON_FILE_PATH
+sed -i "s|/scripts/|$SCRIPTS_REPO_BASE_DIR/|g" $DD_CRON_FILE_PATH
+
 
 echo "" >>$DD_CRON_FILE_PATH
 echo "#↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑ [$SCRIPTS_REPO_BASE_DIR] 仓库任务列表 ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑#" >>$DD_CRON_FILE_PATH
