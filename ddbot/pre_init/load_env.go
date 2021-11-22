@@ -10,11 +10,7 @@ import (
 	ddutils "ddbot/utils"
 )
 
-// LoadEnv
-// @description   使用bot需要的一些配置变量初始化
-// @auth      iouAkira
-// @param     envFilePath string env.sh环境变量配置文件的绝对路径
-// @return 	  upParams string up 启动参数
+// LoadEnv 使用bot需要的一些配置变量初始化
 func LoadEnv() string {
 	defaultRepoBaseDir := "/iouRepos/dd_scripts"
 	defaultDataBaseDir := "/data/dd_data"
@@ -80,12 +76,12 @@ func LoadEnv() string {
 		}
 	}
 	replyKeyBoard := map[string]string{
-		"选择脚本执行⚡️": "/spnode",
+		"选择脚本执行⚡️": "/ddnode",
 		"选择日志下载⬇️": "/logs",
-		"更新仓库代码🔄": "/cmd docker_entrypoint.sh",
-		"查看账号🍪":   "/rdc",
+		"更新仓库代码🔄":  "/cmd docker_entrypoint.sh",
+		"查看账号🍪":    "/rdc",
 		"查看系统进程⛓":  "/cmd ps -ef|grep -v 'grep\\| ts\\|/ts\\| sh'",
-		"查看帮助说明📝": "/help",
+		"查看帮助说明📝":  "/help",
 	}
 	models.GlobalEnv = &models.DDEnv{
 		RepoBaseDir:              repoBaseDir,
