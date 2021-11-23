@@ -6,13 +6,13 @@ import (
 )
 
 //CommandHelp 给每一个命令添加一个执行前缀并动态添加到命令列表,支持多参数(pram1,pram2...)
-func CommandHelp(args ...string) string {
+func CommandHelp(prefix string, args ...string) string {
 	if len(args) == 0 {
-		return "CommandPrefix"
+		return prefix
 	}
 	var result string
 	if !strings.HasPrefix(strings.Trim(args[0], ""), "CommandPrefix") {
-		result += "CommandPrefix"
+		result += prefix
 	}
 	result += "%s"
 	return fmt.Sprintf(result, strings.Join(args, " "))
@@ -34,7 +34,7 @@ func (c *Command) Description(args ...string) string {
 //Run  执行之前可以将更新参数传入函数中达到拓展功能效果,支持多参数(pram1,pram2...)
 func (c *Command) Run(args ...string) string {
 	args = append([]string{c.Cmd}, args...)
-	return CommandHelp(args...)
+	return CommandHelp(c.Prefix(), args...)
 }
 
 //Prefix 定义了指令前缀

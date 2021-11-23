@@ -14,4 +14,10 @@ type ICommandHandler interface {
 	RegCommandByChar(string, string, ...HandlerFunc) ICommandHandler
 	RegCommand(Executable, string, ...HandlerFunc) ICommandHandler
 	Handle(Executable, string, ...HandlerFunc) ICommandHandler
+
+}
+
+type IPrefixHandler interface {
+	GetCommandPrefixs() []string
+	GetPrefix(string) string
 }

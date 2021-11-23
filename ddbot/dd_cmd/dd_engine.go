@@ -59,6 +59,17 @@ func (engine *Engine) GetCommandPrefixs() []string {
 	return prefixs
 }
 
+// GetPrefix 对于给出的指令查询出对应的命令prefix //todo 有个bug 就是不能使用重复字符作为前缀比如 ?? >>这样
+func (engine *Engine) GetPrefix(word string) string {
+	prefixs := engine.GetCommandPrefixs()
+	for _, v := range prefixs {
+		if strings.HasSuffix(word, v) {
+			return v
+		}
+	}
+	return ""
+}
+
 // Run 主入口函数包含两个两个参数，token tg的bot token,userid 用户的id
 // 函数在启动时候会直接将 tgbotapi 进行初始化操作,并在结束进程时候停止信息的接受
 func (engine *Engine) Run(token string, userid int64) {

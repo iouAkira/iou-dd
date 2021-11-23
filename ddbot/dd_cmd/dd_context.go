@@ -6,8 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	ddutils "ddbot/utils"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -85,17 +83,20 @@ func (c *Context) Message(ctx *Context) *tgbotapi.Message {
 }
 
 // ParseCmd 解析命令参数,对已经首字节为"/"进行裁剪，保留非空参数,并且把剩余按空格切分口存入 Command.Params 中
-func ParseCmd(cmd string, engine *Engine) (Command, error) {
+func ParseCmd(cmd string, engine IPrefixHandler) (Command, error) {
+	cmd = strings.Trim(	cmd," ")
 	if cmd == "" {
 		return Command{}, fmt.Errorf("命令不能为空")
 	}
-
-	commandPrefix := engine.GetCommandPrefixs()
-	// log.Printf("ParseCmd commandPrefix: %v", commandPrefix)
-	if !ddutils.IsContain(commandPrefix, cmd[0:1]) {
+	commandPrefix := engine.GetPrefix(cmd)
+	if commandPrefix == ""{
+		return Command{}, fmt.Errorf("前缀无法识别")
+	}
+	//log.Printf("ParseCmd commandPrefix: %v", commandPrefix)
+	if !strings.HasPrefix(cmd,commandPrefix) {
 		return Command{}, fmt.Errorf("非法命令")
 	}
-	cmd = strings.Trim(cmd, cmd[0:1])
+	cmd = strings.Trim(cmd, commandPrefix)
 	cmdMsgSplit := strings.Split(cmd, " ")
 	var arr []string
 	for _, v := range cmdMsgSplit {
@@ -104,7 +105,8 @@ func ParseCmd(cmd string, engine *Engine) (Command, error) {
 		}
 		arr = append(arr, v)
 	}
-	cmdST := GetCmd(arr[0])
+	cmdST := Command{prefix: commandPrefix,Cmd: cmdMsgSplit[0]}
+	log.Println(cmdST)
 	log.Printf("cmdST:%+v", cmdST)
 	cmdST.Params = cmdMsgSplit[1:]
 	return cmdST, nil
