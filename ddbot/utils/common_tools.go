@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -11,8 +10,9 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	
-	"ddbot/models"
+
+	models "ddbot/models"
+
 	"github.com/go-cmd/cmd"
 )
 
@@ -50,7 +50,7 @@ func ExecCommand(botCmd []string, cmdType string, logsPath string) (string, bool
 	if cmdType == "cmd" && botCmd[0] != "spnode" {
 		cmdTimeOut = 120
 	}
-	log.Printf(strings.Join(botCmd, " "))
+	log.Printf("%v", strings.Join(botCmd, " "))
 	execCmd := cmd.NewCmd("sh", "-c", strings.Join(botCmd, " "))
 	statusChan := execCmd.Start()
 
@@ -76,11 +76,12 @@ func ExecCommand(botCmd []string, cmdType string, logsPath string) (string, bool
 		isFile = true
 		logFilePath := fmt.Sprintf("%v/ddbot_%v_%v.log", logsPath, botCmd[0], timeStamp)
 		logF, err := os.Create(logFilePath)
-		defer logF.Close()
 		if err != nil {
 			fmt.Println(err.Error())
+			logF.Close()
 		} else {
-			_, err = logF.Write([]byte(execResult))
+			_, _ = logF.Write([]byte(execResult))
+			logF.Close()
 			execResult = logFilePath
 		}
 	}
@@ -101,7 +102,7 @@ func ReplyKeyboardFileOpt(rkb string, optKey string, opt string) (string, error)
 	cookiesFile, err := ioutil.ReadFile(models.GlobalEnv.ReplyKeyboardFilePath)
 	if err != nil {
 		log.Printf("读取%v快捷回复配置文件出错。。%v", models.GlobalEnv.ReplyKeyboardFilePath, err)
-		return "", errors.New(fmt.Sprintf("读取%v快捷回复配置文件出错❌\n%v", models.GlobalEnv.ReplyKeyboardFilePath, err))
+		return "", fmt.Errorf("读取%v快捷回复配置文件出错❌\n%v", models.GlobalEnv.ReplyKeyboardFilePath, err.Error())
 	}
 	lines := strings.Split(string(cookiesFile), "\n")
 	for i, line := range lines {
@@ -133,13 +134,12 @@ func ReplyKeyboardFileOpt(rkb string, optKey string, opt string) (string, error)
 	}
 	lines = RemoveZero(lines)
 
-	var output string
-	output = fmt.Sprintf("%v\n", strings.Join(RemoveZero(lines), "\n"))
+	output := fmt.Sprintf("%v\n", strings.Join(RemoveZero(lines), "\n"))
 
 	err = ioutil.WriteFile(models.GlobalEnv.ReplyKeyboardFilePath, []byte(output), 0644)
 	if err != nil {
 		log.Printf("写入%v快捷回复配置文件 %v", models.GlobalEnv.ReplyKeyboardFilePath, err)
-		return "", errors.New(fmt.Sprintf("写入%v快捷回复配置文件❌\n%v", models.GlobalEnv.ReplyKeyboardFilePath, err))
+		return "", fmt.Errorf("写入%v快捷回复配置文件❌\n%v", models.GlobalEnv.ReplyKeyboardFilePath, err.Error())
 	}
 	return optMsg, nil
 }
@@ -305,7 +305,7 @@ func CheckIfError(err error) {
 func LofDevLog(format string, v ...interface{}) {
 	printLog := false
 	envPrintLog := LofDevLogGetEnvFromEnvFile("/data/env.sh", "LOF_DEV_LOG")
-	envPrintLog = "true"
+	// envPrintLog = "true"
 	if envPrintLog == "true" {
 		printLog = true
 	}

@@ -10,23 +10,20 @@ import (
 	"strings"
 	"time"
 
-	"ddbot/models"
+	models "ddbot/models"
 )
 
-// ExecUpCommand
-// @description   执行命令指定了 -up 参数的启动命令
-// @auth      iouAkira
-// @param     upParams 全局程序配置信息
+// ExecUpCommand 执行命令指定了 -up 参数的启动命令
 func ExecUpCommand(upParams string) {
 	// -up 启动参数 不指定默认启动ddbot
 	if upParams != "" {
-		fmt.Printf("传入 -up参数：%v \n", upParams)
+		fmt.Printf("传入 -up参数[%v]\n", upParams)
 		if upParams == "commitShareCode" {
-			fmt.Printf("启动程序指定了 -up 参数为 %v 开始上传互助码。\n", upParams)
+			fmt.Printf("启动程序指定了 -up 参数为[%v]开始上传互助码。\n", upParams)
 			UploadShareCode(models.GlobalEnv)
 		} else if upParams == "syncRepo" {
-			fmt.Printf("启动程序指定了 -up 参数为 %v 开始同步仓库代码。\n", upParams)
-			if models.GlobalEnv.RepoBaseDir != "" {
+			fmt.Printf("启动程序指定了 -up 参数为[%v]开始同步仓库代码。\n", upParams)
+			if models.GlobalEnv.RepoBaseDir != "" && strings.HasPrefix(models.GlobalEnv.RepoBaseDir, "/") {
 				SyncRepo(models.GlobalEnv)
 			} else {
 				fmt.Printf("同步仓库设定的目录[%v]不规范，退出同步。\n", models.GlobalEnv.RepoBaseDir)
@@ -41,10 +38,7 @@ func ExecUpCommand(upParams string) {
 	}
 }
 
-// UploadShareCode
-// @description
-// @auth       iouAkira
-// @param1     config *models.DDEnv
+// UploadShareCode 上传互助码
 func UploadShareCode(ddConfig *models.DDEnv) {
 	confFilePath := fmt.Sprintf("%v/dd_sharecode.json", ddConfig.RepoBaseDir)
 	if CheckDirOrFileIsExist(confFilePath) {
@@ -109,9 +103,7 @@ func UploadShareCode(ddConfig *models.DDEnv) {
 	}
 }
 
-// RenewAllCookie
-// @description   更新所有cookie
-// @auth       iouAkira
+// RenewAllCookie 续期所有的wskey
 func RenewAllCookie() {
 	wskeyFile, err := ioutil.ReadFile(models.GlobalEnv.CookiesWSKeyListFilePath)
 

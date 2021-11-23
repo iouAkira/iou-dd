@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 
 	"ddbot/models"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
@@ -40,11 +41,7 @@ func SyncRepo(config *models.DDEnv) {
 	}
 }
 
-// repoClone
-// @description	根据传入仓库信息配置，clone仓库
-// @auth	@iouAkira
-// @param1     url string
-// @param2     directory string
+// repoClone 根据传入仓库信息配置，clone仓库
 func repoClone(url string, directory string) {
 	// Clone the given repository to the given directory
 	fmt.Printf("git clone %s to %s\n", url, directory)
@@ -69,10 +66,7 @@ func repoClone(url string, directory string) {
 	fmt.Println(commit)
 }
 
-// pullRepo
-// @description	根据传入仓库信息配置，更新仓库
-// @auth	@iouAkira
-// @param1     repoPath string
+// pullRepo 根据传入仓库信息配置，更新仓库
 func repoPull(path string) {
 	//对异常状态进行补货并输出到缓冲区
 	defer func() {
@@ -81,7 +75,7 @@ func repoPull(path string) {
 			debug.PrintStack()
 		}
 	}()
-	//resetHard(path) //还原本地修改操作放到shell_default_scripts.sh里面
+	resetHard(path) //还原本地修改操作
 	// We instantiate a new repository targeting the given path (the .git folder)
 	r, errP := git.PlainOpen(path)
 	CheckIfError(errP)
@@ -104,7 +98,7 @@ func repoPull(path string) {
 		} else if errPull.Error() == "authentication required" {
 			fmt.Printf("用户密码登陆失败，更新失败。\n")
 		} else {
-			fmt.Printf(errPull.Error())
+			fmt.Printf("%v", errPull.Error())
 		}
 	} else {
 		CheckIfError(errPull)
@@ -118,10 +112,7 @@ func repoPull(path string) {
 	}
 }
 
-// resetHard
-// @description	根据传入仓库流经还原本地修改，防止更新仓库冲突
-// @auth	@iouAkira
-// @param     repoPath string
+// resetHard 根据传入仓库流经还原本地修改，防止更新仓库冲突
 func resetHard(path string) {
 	//var execResult string
 	var cmdArguments []string
@@ -137,10 +128,10 @@ func resetHard(path string) {
 	command.Stdout = &outInfo
 	err := command.Start()
 	if err != nil {
-		fmt.Printf(err.Error())
+		fmt.Printf("%v", err.Error())
 	}
 	if err = command.Wait(); err != nil {
-		fmt.Printf(err.Error())
+		fmt.Printf("%v", err.Error())
 	} else {
 		//fmt.Println(command.ProcessState.Pid())
 		//fmt.Println(command.ProcessState.Sys().(syscall.WaitStatus).ExitStatus())

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"ddbot/models"
+	models "ddbot/models"
 	ddutils "ddbot/utils"
 )
 
@@ -20,7 +20,7 @@ func LoadEnv() string {
 	var upParams string
 	// StringVar用指定的名称、控制台参数项目、默认值、使用信息注册一个string类型flag，并将flag的值保存到p指向的变量
 	flag.StringVar(&envParams, "env", envFilePath, fmt.Sprintf("默认为[%v],如果env.sh文件不存在于该默认路径，请使用-env指定，否则程序将不启动。", envFilePath))
-	flag.StringVar(&upParams, "up", "", "默认为空，为启动bot；commitShareCode为提交互助码到助力池；syncRepo为同步仓库代码；")
+	flag.StringVar(&upParams, "up", "", "默认为空，为启动bot；commitShareCode为提交互助码到助力池；syncRepo为同步仓库代码；renewCookie为给素有wskey续期")
 	flag.Parse()
 	fmt.Printf("-env 启动参数值:[%v];\n", envParams)
 	if ddutils.CheckDirOrFileIsExist(envParams) {
@@ -78,7 +78,7 @@ func LoadEnv() string {
 	replyKeyBoard := map[string]string{
 		"选择脚本执行⚡️": "/ddnode",
 		"选择日志下载⬇️": "/logs",
-		"更新仓库代码🔄":  "/cmd docker_entrypoint.sh",
+		"更新仓库代码🔄":  fmt.Sprintf("/cmd cd %v ; sh iou-entry.sh", repoBaseDir),
 		"查看账号🍪":    "/rdc",
 		"查看系统进程⛓":  "/cmd ps -ef|grep -v 'grep\\| ts\\|/ts\\| sh'",
 		"查看帮助说明📝":  "/help",

@@ -10,8 +10,9 @@ import (
 	"net/http"
 	"sort"
 	"strings"
-	
-	"ddbot/models"
+
+	models "ddbot/models"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -20,10 +21,7 @@ const (
 	RETURN string = "return"
 )
 
-// MakeReplyKeyboard
-// @description   构建快捷回复按钮
-// @auth       iouAkira
-// @param1     config *models.DDEnv
+// MakeReplyKeyboard 构建快捷回复按钮
 func MakeReplyKeyboard(config *models.DDEnv) tgbotapi.ReplyKeyboardMarkup {
 	if CheckDirOrFileIsExist(config.ReplyKeyboardFilePath) {
 		cookiesFile, err := ioutil.ReadFile(config.ReplyKeyboardFilePath)
@@ -66,10 +64,7 @@ func MakeReplyKeyboard(config *models.DDEnv) tgbotapi.ReplyKeyboardMarkup {
 	return replyKeyboards
 }
 
-// LoadReplyKeyboardMap
-// @description   更新快捷回复按钮全局配置
-// @auth       iouAkira
-// @param1     config *models.DDEnv
+// LoadReplyKeyboardMap 更新快捷回复按钮全局配置
 func LoadReplyKeyboardMap(config *models.DDEnv) {
 	if CheckDirOrFileIsExist(config.ReplyKeyboardFilePath) {
 		cookiesFile, err := ioutil.ReadFile(config.ReplyKeyboardFilePath)
@@ -86,10 +81,7 @@ func LoadReplyKeyboardMap(config *models.DDEnv) {
 	}
 }
 
-// RenewCookie
-// @description   根据传入的wskey更新对应cookie
-// @auth       	iouAkira
-// @param		wskey string
+// RenewCookie 根据传入的wskey更新对应cookie
 func RenewCookie(wskey string) (string, error) {
 	renewCK := ""
 	//默认签名UA配置
@@ -200,17 +192,14 @@ func RenewCookie(wskey string) (string, error) {
 	return renewCK, backErrMsg
 }
 
-// writeCookiesFile
-// @description 将传入的 cookie 写入文件
-// @auth       	iouAkira
-// @param		wskey string
+// writeCookiesFile 将传入的 cookie 写入文件
 func writeCookiesFile(newCookie string) error {
 	if CheckDirOrFileIsExist(models.GlobalEnv.CookiesListFilePath) {
 		isReplace := false
 		cookiesFile, err := ioutil.ReadFile(models.GlobalEnv.CookiesListFilePath)
 		if err != nil {
 			log.Printf("读取cookies.list文件出错。。%s", err)
-			return errors.New(fmt.Sprintf("读取cookies.list文件出错❌\n%v", err))
+			return fmt.Errorf("读取cookies.list文件出错❌\n%v", err)
 		}
 		lines := strings.Split(string(cookiesFile), "\n")
 		for i, line := range lines {
@@ -232,11 +221,11 @@ func writeCookiesFile(newCookie string) error {
 		err = ioutil.WriteFile(models.GlobalEnv.CookiesListFilePath, []byte(output), 0644)
 		if err != nil {
 			log.Printf("写入cookies.list文件出错 %s", err)
-			return errors.New(fmt.Sprintf("写入cookies.list文件出错❌\n%v", err))
+			return fmt.Errorf("写入cookies.list文件出错❌\n%v", err)
 		}
 		return nil
 	} else {
-		return errors.New(fmt.Sprintf("%v文件不存在⚠️", models.GlobalEnv.CookiesListFilePath))
+		return fmt.Errorf("%v文件不存在⚠️", models.GlobalEnv.CookiesListFilePath)
 	}
 
 }
