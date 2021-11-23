@@ -2,7 +2,6 @@ package dd_cmd
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 
@@ -106,8 +105,8 @@ func ParseCmd(cmd string, engine IPrefixHandler) (Command, error) {
 		arr = append(arr, v)
 	}
 	cmdST := Command{prefix: commandPrefix,Cmd: cmdMsgSplit[0]}
-	log.Println(cmdST)
-	log.Printf("cmdST:%+v", cmdST)
+	//log.Println(cmdST)
+	//log.Printf("cmdST:%+v", cmdST)
 	cmdST.Params = cmdMsgSplit[1:]
 	return cmdST, nil
 }
