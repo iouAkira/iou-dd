@@ -86,7 +86,7 @@ func LoadEnv() string {
 	models.GlobalEnv = &models.DDEnv{
 		RepoBaseDir:              repoBaseDir,
 		DataBaseDir:              dataBaseDir,
-		SpnodeBtnFilePath:        repoBaseDir,
+		DDnodeBtnFilePath:        repoBaseDir,
 		LogsBtnFilePath:          fmt.Sprintf("%v/logs", dataBaseDir),
 		CustomFilePath:           fmt.Sprintf("%v/custom_scripts", dataBaseDir),
 		CookiesWSKeyListFilePath: wskeyListFilePath,

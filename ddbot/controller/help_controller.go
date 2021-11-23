@@ -14,7 +14,7 @@ import (
 func HelpHandler(env *models.DDEnv) dd_cmd.HandlerFunc {
 	return func(ctx *dd_cmd.Context) {
 		readme := "🙌 <b>使用说明</b> v1.0.0\n" +
-			"\n 👉 <b>/spnode</b>  \n        ------  执行JS脚本文件" +
+			"\n 👉 <b>/ddnode</b>  \n        ------  执行JS脚本文件" +
 			"\n 👉 <b>/logs</b>    \n        ------  下载日志文件" +
 			"\n 👉 <b>/rdc</b>    \n        ------  读取Cookies列表" +
 			"\n 👉 <b>/bl</b>    \n        ------  查看cookie收支图表   例：/bl 1 查看第一个cookie" +

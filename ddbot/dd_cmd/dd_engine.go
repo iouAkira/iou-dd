@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	ddutils "ddbot/utils"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -33,8 +35,7 @@ func New() *Engine {
 }
 
 // addCommand 将所有handlerPrfix相同(指令前缀)的指令合并到一颗树组合中。
-func (engine *Engine) addCommand(handlerPrfix Executable, path string, handlers HandlerFuncList) {
-	log.Printf("> route on [ %s %s ]", handlerPrfix.Prefix(), path)
+func (engine *Engine) addCommand(handlerPrfix Executable, command string, handlers HandlerFuncList) {
 	//查询 handlerPrfix 节点是否存在  例如 "/" "@" ">"，
 	//对为空对象是初始化添加节点组
 	commandTree := engine.handlerPrfixList.get(handlerPrfix)
@@ -46,7 +47,7 @@ func (engine *Engine) addCommand(handlerPrfix Executable, path string, handlers 
 		commandTree = engine.handlerPrfixList.get(handlerPrfix)
 	}
 	//todo 解决获取节点到底是哪里的问题
-	commandTree.commands.addCommandNode(path, handlers)
+	commandTree.commands.addCommandNode(command, handlers)
 }
 
 // GetCommandPrefixs 获取当前engine的指令前缀集合
@@ -126,28 +127,26 @@ func (engine *Engine) handleRequest(c *Context) {
 	if hp != nil && len(*hp.commands) > 0 {
 		hasCommand := false
 		log.Printf("入口命令：%s", msgPrefix)
-		for _, route := range *hp.commands {
-			if fmt.Sprintf("%s%s", hp.handlerPrfix.Prefix(), route.path) == cleanPath(msg, 0)[0] {
+		for _, command := range *hp.commands {
+			log.Printf("before cleanPath: %v", msg)
+			log.Printf("cleanPath: %v", ddutils.CleanCommand(msg, 0)[0])
+			if fmt.Sprintf("%s%s", hp.handlerPrfix.Prefix(), command.commandStr) == ddutils.CleanCommand(msg, 0)[0] {
 				hasCommand = true
-				log.Printf("存在命令 %s", route.path)
+				log.Printf("存在命令 %s", command.commandStr)
 				log.Printf("等待命令 %s", msg)
 				log.Printf("接受命令 %s", msg)
-
-				for _, handler := range route.handlers {
+				c.HandlerPrefixStr = ddutils.CleanCommand(msg, 0)[0]
+				for _, handler := range command.handlers {
 					handler(c)
 				}
 			}
 		}
 		if !hasCommand {
-			log.Printf("不存在命令 %s", msg)
+			log.Printf("不存在命令 %s，响应[unkonw]", msg)
 			unknowMsg := "/unknow"
 			hp = engine.handlerPrfixList.get(&Command{prefix: "/"})
 			for _, route := range *hp.commands {
-				if fmt.Sprintf("%s%s", hp.handlerPrfix.Prefix(), route.path) == cleanPath(unknowMsg, 0)[0] {
-					log.Printf("存在命令 %s", route.path)
-					log.Printf("等待命令 %s", unknowMsg)
-					log.Printf("接受命令 %s", unknowMsg)
-
+				if fmt.Sprintf("%s%s", hp.handlerPrfix.Prefix(), route.commandStr) == ddutils.CleanCommand(unknowMsg, 0)[0] {
 					for _, handler := range route.handlers {
 						handler(c)
 					}
@@ -156,16 +155,4 @@ func (engine *Engine) handleRequest(c *Context) {
 		}
 
 	}
-}
-
-func cleanPath(cmd string, offset int) []string {
-	cmdMsgSplit := strings.Split(cmd[offset:], " ")
-	var arr []string
-	for _, v := range cmdMsgSplit {
-		if v == "" {
-			continue
-		}
-		arr = append(arr, v)
-	}
-	return arr
 }

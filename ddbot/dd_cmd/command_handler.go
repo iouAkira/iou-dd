@@ -38,7 +38,7 @@ func (commandHandler *CommandHandler) Use(middleware ...HandlerFunc) ICommandHan
 func (commandHandler *CommandHandler) handle(cmdMethod Executable, command string, handlers HandlerFuncList) ICommandHandler {
 	handlers = commandHandler.combineHandlers(handlers)
 	commandHandler.engine.addCommand(cmdMethod, command, handlers)
-	log.Printf("[CommandHandler] 注册指令: %s %s", cmdMethod.Prefix(), command)
+	log.Printf("[CommandHandler] 注册指令: %v %v，帮助：%v", cmdMethod.Prefix(), command, cmdMethod.Description())
 	return commandHandler.returnObj()
 }
 

@@ -1,7 +1,11 @@
 package controller
 
 import (
+	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"strings"
 
 	dd_cmd "ddbot/dd_cmd"
 	models "ddbot/models"
@@ -13,31 +17,101 @@ import (
 // HelpHandler 使用说明独立控制器
 func DDNodeHandler(env *models.DDEnv) dd_cmd.HandlerFunc {
 	return func(ctx *dd_cmd.Context) {
-		readme := "🙌 <b>使用说明</b> v1.0.0\n" +
-			"\n 👉 <b>/spnode</b>  \n        ------  执行JS脚本文件" +
-			"\n 👉 <b>/logs</b>    \n        ------  下载日志文件" +
-			"\n 👉 <b>/rdc</b>    \n        ------  读取Cookies列表" +
-			"\n 👉 <b>/bl</b>    \n        ------  查看cookie收支图表   例：/bl 1 查看第一个cookie" +
-			"\n 👉 <b>/env</b>    \n        ------  更新或者替换env.sh内的环境变量 例：/env aaa=\"bbb\"" +
-			"\n 👉 <b>/cmd</b>    \n        ------  执行指定命令   例：/cmd ls -l" +
-			"\n 👉 <b>/ak</b>    \n        ------  添加/更新快捷回复键盘   例：/ak 键盘显示===/cmd echo 'show reply keyboard'" +
-			"\n 👉 <b>/dk</b>    \n        ------  删除快捷回复键盘   例：/dk 键盘显示" +
-			"\n 👉 <b>/clk</b>    \n        ------  清空快捷回复键盘   例：/clk" +
-			"\n 👉 <b>/dl</b>    \n        ------  通过链接下载文件   例：/dl https://raw.githubusercontent.com/iouAkira/someDockerfile/master/dd_scripts/shell_mod_script.sh" +
-			"\n 👉 <b>/renew</b>    \n        ------  通过wskey[cookies_wskey.list]更新cookies.list   例：/renew 1  更行cookies_wskey.list里面的第一个ck"
+		cmdMsg := ""
+		chatId := int64(0)
+		msgId := int(0)
+		isCallbackQuery := false
+		if ctx.Update.CallbackQuery != nil && ctx.Update.CallbackQuery.Data != "" {
+			cmdMsg = ctx.Update.CallbackQuery.Data
+			chatId = ctx.Update.CallbackQuery.From.ID
+			msgId = ctx.Update.CallbackQuery.Message.MessageID
+			isCallbackQuery = true
+		} else {
+			cmdMsg = ctx.Update.Message.Text
+			chatId = ctx.Update.Message.Chat.ID
+			msgId = ctx.Update.Message.MessageID
+		}
+		if cmdMsg == "" {
+			return
+		}
 
-		//创建信息
-		helpMsg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, readme)
-		//tgbotapi.ChatRecordAudio
-		//修改信息格式
-		helpMsg.ParseMode = tgbotapi.ModeHTML
-		//创建回复键盘结构体
-		tkbs := ddutils.MakeReplyKeyboard(env)
-		//赋值给ReplyMarkup[快速回复]
-		helpMsg.ReplyMarkup = tkbs
-		//发送消息
-		if _, err := ctx.Send(helpMsg); err != nil {
-			log.Println(err)
+		bot := ctx.Request
+		cmdMsgSplit := ddutils.CleanCommand(cmdMsg, 0)
+		log.Println("CleanCommand cmdMsgSplit:", cmdMsgSplit)
+		if len(cmdMsgSplit) == 1 || ddutils.IsContain(cmdMsgSplit, "dir") {
+			if ddutils.IsContain(cmdMsgSplit, "dir") && cmdMsgSplit[1] == "dir" {
+				var editNumericKeyboard = ddutils.MakeKeyboardMarkup(ctx.HandlerPrefixStr, 3, cmdMsgSplit[2], "js")
+				respMsg := tgbotapi.NewEditMessageText(chatId, msgId, "请选择要执行的操作⚙️")
+				respMsg.ReplyMarkup = &editNumericKeyboard
+				bot.Send(respMsg)
+			} else {
+				var numericKeyboard = ddutils.MakeKeyboardMarkup(ctx.HandlerPrefixStr, 3, env.DDnodeBtnFilePath, "js")
+				respMsg := tgbotapi.NewMessage(chatId, "请选择要执行的操作⚙️")
+				respMsg.ReplyToMessageID = msgId
+				respMsg.ReplyMarkup = numericKeyboard
+				bot.Send(respMsg)
+			}
+		} else {
+			var respMsgInfo tgbotapi.Message
+			if isCallbackQuery {
+				respMsg := tgbotapi.NewEditMessageText(chatId, msgId, fmt.Sprintf("`%v` 正在执行⚡️", strings.Join(cmdMsgSplit, " ")))
+				respMsgInfo, _ = bot.Send(respMsg)
+			} else {
+				respMsg := tgbotapi.NewMessage(chatId, fmt.Sprintf("`%v` 正在执行⚡️", strings.Join(cmdMsgSplit, " ")))
+				respMsg.ParseMode = tgbotapi.ModeMarkdown
+				respMsg.ReplyToMessageID = msgId
+				respMsgInfo, _ = bot.Send(respMsg)
+			}
+			execResult, isFile, err := ddutils.ExecCommand(ddutils.CleanCommand(cmdMsg[1:], 0), ctx.HandlerPrefixStr[1:], env.LogsBtnFilePath)
+			if err != nil {
+				log.Println(err)
+				if isFile {
+					respMsgDel := tgbotapi.NewDeleteMessage(chatId, respMsgInfo.MessageID)
+					bot.Send(respMsgDel)
+					//需要传入绝对路径
+					bytes, _ := ioutil.ReadFile(execResult)
+					fileSend := tgbotapi.FileBytes{
+						Name:  "bot_exec.log",
+						Bytes: bytes,
+					}
+					respMsgFile := tgbotapi.NewDocument(chatId, fileSend)
+					respMsgFile.Caption = fmt.Sprintf("`%v` 执行出错❌", strings.Join(cmdMsgSplit, " "))
+					respMsgFile.ParseMode = tgbotapi.ModeMarkdown
+					bot.Send(respMsgFile)
+					_ = os.Remove(execResult)
+				} else {
+					respMsgEdit := tgbotapi.NewEditMessageText(chatId, respMsgInfo.MessageID, fmt.Sprintf("`%v` 执行出错❌\n\n```\n%v```", strings.Join(cmdMsgSplit, " "), err))
+					respMsgEdit.ParseMode = tgbotapi.ModeMarkdown
+					bot.Send(respMsgEdit)
+				}
+			} else {
+				execStatus := "执行成功✅"
+				if strings.HasPrefix(execResult, "stderr") {
+					execStatus = "执行出错❌"
+				}
+				//log.Printf(execResult)
+				if isFile {
+					respMsgDel := tgbotapi.NewDeleteMessage(chatId, respMsgInfo.MessageID)
+					bot.Send(respMsgDel)
+					//需要传入绝对路径
+					bytes, _ := ioutil.ReadFile(execResult)
+					fileSend := tgbotapi.FileBytes{
+						Name:  "bot_exec.log",
+						Bytes: bytes,
+					}
+					respMsgFile := tgbotapi.NewDocument(chatId, fileSend)
+					respMsgFile.Caption = fmt.Sprintf("`%v` %v", strings.Join(cmdMsgSplit, " "), execStatus)
+					respMsgFile.ParseMode = tgbotapi.ModeMarkdown
+					bot.Send(respMsgFile)
+					_ = os.Remove(execResult)
+				} else {
+					respMsgEdit := tgbotapi.NewEditMessageText(chatId,
+						respMsgInfo.MessageID,
+						fmt.Sprintf("`%v` %v\n\n```\n%v```", strings.Join(cmdMsgSplit, " "), execStatus, execResult))
+					respMsgEdit.ParseMode = tgbotapi.ModeMarkdown
+					bot.Send(respMsgEdit)
+				}
+			}
 		}
 	}
 }

@@ -23,12 +23,13 @@ import (
 // @param     fileDir string 需要列出文件的目录
 // @return     suffix string 需要列出文件的后缀名
 // @return    fileList []string 返回@fileDir下面所有后缀名为@suffix的文件
-func ListFileName(pathSeparator string, fileDir string, suffix string) []string {
+func ListFileName(pathSeparator string, fileDir string, suffix string) ([]string, []string) {
 	files, _ := ioutil.ReadDir(fileDir)
+	var dirList []string
 	var fileList []string
 	for _, oneFile := range files {
 		if oneFile.IsDir() {
-			continue
+			dirList = append(dirList, oneFile.Name())
 		} else {
 			fileName := strings.Split(oneFile.Name(), ".")
 			if fileName[len(fileName)-1] == suffix {
@@ -37,7 +38,7 @@ func ListFileName(pathSeparator string, fileDir string, suffix string) []string 
 			}
 		}
 	}
-	return fileList
+	return dirList, fileList
 }
 
 // ExecCommand 执行系统命令
@@ -47,10 +48,10 @@ func ExecCommand(botCmd []string, cmdType string, logsPath string) (string, bool
 	var execResult string
 	timeStamp := time.Now().UnixNano() / 1e6
 	var cmdTimeOut time.Duration = 3600
-	if cmdType == "cmd" && botCmd[0] != "spnode" {
+	if cmdType == "cmd" && botCmd[0] != "ddnode" {
 		cmdTimeOut = 120
 	}
-	log.Printf("%v", strings.Join(botCmd, " "))
+	log.Printf("func-ExecCommand: %v", strings.Join(botCmd, " "))
 	execCmd := cmd.NewCmd("sh", "-c", strings.Join(botCmd, " "))
 	statusChan := execCmd.Start()
 

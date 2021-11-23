@@ -7,8 +7,9 @@ import (
 	"os"
 	"path"
 	"strings"
-	
+
 	"ddbot/models"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -166,7 +167,7 @@ func HandlerDocumentMsg(docMsg *tgbotapi.Message, bot *tgbotapi.BotAPI) {
 			keyboardMarkup.InlineKeyboard = append(keyboardMarkup.InlineKeyboard, existsRow)
 		}
 		keyboardMarkup.InlineKeyboard = append(keyboardMarkup.InlineKeyboard, tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("取消", "cancel")))
-		respMsg := tgbotapi.NewMessage(docMsg.Chat.ID, fmt.Sprintf("文件保存路径为`%v`，该路径在容器挂载目录内，方便查看，且同时会在`%v`保存一份方便执行调用。\n\n请选择对`%v`文件的操作️", models.GlobalEnv.CustomFilePath, models.GlobalEnv.SpnodeBtnFilePath, docF.FileName))
+		respMsg := tgbotapi.NewMessage(docMsg.Chat.ID, fmt.Sprintf("文件保存路径为`%v`，该路径在容器挂载目录内，方便查看，且同时会在`%v`保存一份方便执行调用。\n\n请选择对`%v`文件的操作️", models.GlobalEnv.CustomFilePath, models.GlobalEnv.DDnodeBtnFilePath, docF.FileName))
 		respMsg.ReplyMarkup = keyboardMarkup
 		respMsg.ReplyToMessageID = docMsg.MessageID
 		respMsg.ParseMode = tgbotapi.ModeMarkdown

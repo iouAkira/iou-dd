@@ -4,7 +4,7 @@ package models
 type DDEnv struct {
 	RepoBaseDir              string
 	DataBaseDir              string
-	SpnodeBtnFilePath        string
+	DDnodeBtnFilePath        string
 	LogsBtnFilePath          string
 	CookiesListFilePath      string
 	CookiesWSKeyListFilePath string

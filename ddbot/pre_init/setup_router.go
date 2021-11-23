@@ -22,7 +22,7 @@ func SetupRouters() *ddCmd.Engine {
 	engine.RegCommandByChar("/", "cmd", ctl.SysCmdHandler(models.GlobalEnv))
 	engine.RegCommandByChar(">", "help", ctl.HelpHandler(models.GlobalEnv))
 	engine.RegCommandByChar("/", "start", ctl.HelpHandler(models.GlobalEnv))
-	engine.RegCommandByChar("/", "ddnode", ctl.HelpHandler(models.GlobalEnv))
+	engine.RegCommandByChar("/", "ddnode", ctl.DDNodeHandler(models.GlobalEnv))
 	//engine.Cmd("ak", controller.AkController(model.Env))
 	//engine.Cmd("dk", controller.DkController(model.Env))
 	//engine.Cmd("clk", controller.ClearReplyKeyboardController(model.Env))

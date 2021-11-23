@@ -23,7 +23,7 @@ type Command struct {
 	Cmd    string   // 执行命令的名称
 	Help   string   // 执行命令的介绍
 	Params []string //执行命令参数
-	prefix string   //执行命令参数
+	prefix string   //命令前缀
 }
 
 //Description 对执行执行的使用说明,支持多参数(pram1,pram2...)

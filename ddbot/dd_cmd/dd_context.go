@@ -13,11 +13,12 @@ import (
 
 // auth @clamp
 type Context struct {
-	Request *tgbotapi.BotAPI
-	Update  *tgbotapi.Update
-	mu      sync.RWMutex
-	Keys    map[string]interface{}
-	engine  *Engine
+	Request          *tgbotapi.BotAPI
+	Update           *tgbotapi.Update
+	mu               sync.RWMutex
+	Keys             map[string]interface{}
+	engine           *Engine
+	HandlerPrefixStr string
 }
 
 // auth @clamp
@@ -90,7 +91,7 @@ func ParseCmd(cmd string, engine *Engine) (Command, error) {
 	}
 
 	commandPrefix := engine.GetCommandPrefixs()
-	log.Printf("ParseCmd commandPrefix: %v", commandPrefix)
+	// log.Printf("ParseCmd commandPrefix: %v", commandPrefix)
 	if !ddutils.IsContain(commandPrefix, cmd[0:1]) {
 		return Command{}, fmt.Errorf("非法命令")
 	}

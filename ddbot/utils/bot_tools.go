@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 
@@ -20,6 +21,85 @@ const (
 	DELETE string = "delete"
 	RETURN string = "return"
 )
+
+// MakeKeyboardMarkup
+// @description   生成回复的InlineKeyboard
+// @auth      iouAkira
+// @param     ikType string 生成InlineKeyboard的类型
+// @param     rowBtns int 每行button的数量
+// @param     filePath 生成button按钮内容对应文件的所属目录
+// @param     suffix 生成button按钮操作的文件后缀名
+// @return    keyboardMarkup tgbotapi.InlineKeyboardMarkup 返回构建好的InlineKeyboardMarkup
+func MakeKeyboardMarkup(ikTypePrefix string, rowBtns int, filePath string, suffix string) tgbotapi.InlineKeyboardMarkup {
+	var keyboardMarkup tgbotapi.InlineKeyboardMarkup
+	ikType := ikTypePrefix[1:]
+	switch ikType {
+	case "rdc":
+		log.Printf("生成rdc类型的InlineKeyboard")
+	case "ddnode":
+		dirList, fileList := ListFileName(string(os.PathSeparator), filePath, "js")
+
+		var btns []*string
+		excludeDir := []string{"node_modules", ".git", "utils", "backUp", "logs", "archive", "docker", "icon"}
+		for di, dv := range dirList {
+			if IsContain(excludeDir, dv) {
+				continue
+			}
+			dir := dv
+			btns = append(btns, &dir)
+			if len(btns) == rowBtns || di == len(dirList)-1 {
+				var row []tgbotapi.InlineKeyboardButton
+				for _, dk := range btns {
+					row = append(row, tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("🗂%v", *dk), fmt.Sprintf("%v %v %v/%v", ikTypePrefix, "dir", filePath, *dk)))
+				}
+				keyboardMarkup.InlineKeyboard = append(keyboardMarkup.InlineKeyboard, row)
+				btns = btns[0:0]
+			}
+		}
+		for i, v := range fileList {
+			if len(strings.Split(v, "_")) < 2 {
+				continue
+			}
+			if strings.HasPrefix(v, "JD") || strings.HasPrefix(v, "USER") || strings.HasPrefix(v, "JS") {
+				continue
+			}
+			file := v
+			btns = append(btns, &file)
+			if len(btns) == rowBtns || i == len(fileList)-1 {
+				var row []tgbotapi.InlineKeyboardButton
+				for _, k := range btns {
+					row = append(row, tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("📜%v", strings.Split(*k, "_")[1:]), fmt.Sprintf("%v %v/%v", ikTypePrefix, filePath, *k)))
+				}
+				keyboardMarkup.InlineKeyboard = append(keyboardMarkup.InlineKeyboard, row)
+				btns = btns[0:0]
+			}
+		}
+	case "logs":
+		_, fileList := ListFileName(string(os.PathSeparator), filePath, "log")
+		var btns []*string
+		for i, v := range fileList {
+			if len(strings.Split(v, "_")) < 2 {
+				continue
+			}
+			file := v
+			btns = append(btns, &file)
+			if len(btns) == rowBtns || i == len(fileList)-1 {
+				var row []tgbotapi.InlineKeyboardButton
+				for _, k := range btns {
+					row = append(row, tgbotapi.NewInlineKeyboardButtonData(*k, fmt.Sprintf("%v %v/%v.log", ikTypePrefix, filePath, *k)))
+				}
+				keyboardMarkup.InlineKeyboard = append(keyboardMarkup.InlineKeyboard, row)
+				btns = btns[0:0]
+			}
+		}
+	}
+
+	keyboardMarkup.InlineKeyboard = append(keyboardMarkup.InlineKeyboard, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("取消", "/cancel"),
+	))
+
+	return keyboardMarkup
+}
 
 // MakeReplyKeyboard 构建快捷回复按钮
 func MakeReplyKeyboard(config *models.DDEnv) tgbotapi.ReplyKeyboardMarkup {
@@ -228,4 +308,16 @@ func writeCookiesFile(newCookie string) error {
 		return fmt.Errorf("%v文件不存在⚠️", models.GlobalEnv.CookiesListFilePath)
 	}
 
+}
+
+func CleanCommand(cmd string, offset int) []string {
+	cmdMsgSplit := strings.Split(cmd[offset:], " ")
+	var arr []string
+	for _, v := range cmdMsgSplit {
+		if v == "" {
+			continue
+		}
+		arr = append(arr, v)
+	}
+	return arr
 }

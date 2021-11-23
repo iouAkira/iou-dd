@@ -8,8 +8,8 @@ type HandlerPrefix struct {
 
 // commandNode 为指令节点，每个指令节点都对应
 type CommandNode struct {
-	path     string          // 所在指令的路径  /[cmd]
-	handlers HandlerFuncList // 回调处理函数
+	commandStr string          // 指令
+	handlers   HandlerFuncList // 回调处理函数
 }
 
 // HandlerPrefixs 是指令组群，通常是需要挂载到 Engine 上来实现多个指令的启用
@@ -36,12 +36,12 @@ func (nodes *CommandNodes) addCommandNode(path string, handlers HandlerFuncList)
 	var hasPath bool
 	for _, s := range *nodes {
 		hasPath = false
-		if s.path == cmdPath {
+		if s.commandStr == cmdPath {
 			hasPath = true
 			break
 		}
 	}
 	if !hasPath {
-		*nodes = append(*nodes, &CommandNode{path: cmdPath, handlers: handlers})
+		*nodes = append(*nodes, &CommandNode{commandStr: cmdPath, handlers: handlers})
 	}
 }
