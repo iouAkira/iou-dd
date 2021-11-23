@@ -3,7 +3,7 @@ package pre_init
 import (
 	"log"
 
-	"ddbot/controller"
+	ctl "ddbot/controller"
 	ddCmd "ddbot/dd_cmd"
 	models "ddbot/models"
 )
@@ -19,16 +19,18 @@ func SetupRouters() *ddCmd.Engine {
 			log.Printf("[%s] %s", context.Update.CallbackQuery.From.UserName, context.Update.CallbackQuery.Data)
 		}
 	})
-	engine.RegCommand("/", "cmd", controller.SysCmdHandler(models.GlobalEnv))
-	engine.RegCommand(">", "help", controller.HelpHandler(models.GlobalEnv))
-	engine.RegCommand("👉", "start", controller.HelpHandler(models.GlobalEnv))
-	//engine.Cmd("ddnode", controller.ExecDDnodeController(model.Env, ""))
+	engine.RegCommandByChar("/", "cmd", ctl.SysCmdHandler(models.GlobalEnv))
+	engine.RegCommandByChar(">", "help", ctl.HelpHandler(models.GlobalEnv))
+	engine.RegCommandByChar("/", "start", ctl.HelpHandler(models.GlobalEnv))
+	engine.RegCommandByChar("/", "ddnode", ctl.HelpHandler(models.GlobalEnv))
 	//engine.Cmd("ak", controller.AkController(model.Env))
 	//engine.Cmd("dk", controller.DkController(model.Env))
 	//engine.Cmd("clk", controller.ClearReplyKeyboardController(model.Env))
 	//engine.Cmd("dl", controller.DownloadFileByUrlController(model.Env))
 	//engine.Cmd("logs", controller.LogController(model.Env))
-	engine.RegCommand("👉", "cancel", controller.CancelController)
+	engine.RegCommandByChar("/", "cancel", ctl.CancelController)
+	// 注册一个未知命令响应函数
+	engine.RegCommandByChar("/", "unknow", ctl.UnknownController)
 
 	return engine
 }

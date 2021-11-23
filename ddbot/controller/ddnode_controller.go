@@ -3,7 +3,7 @@ package controller
 import (
 	"log"
 
-	ddCmd "ddbot/dd_cmd"
+	dd_cmd "ddbot/dd_cmd"
 	models "ddbot/models"
 	ddutils "ddbot/utils"
 
@@ -11,8 +11,8 @@ import (
 )
 
 // HelpHandler 使用说明独立控制器
-func DDNodeHandler(env *models.DDEnv) ddCmd.HandlerFunc {
-	return func(ctx *ddCmd.Context) {
+func DDNodeHandler(env *models.DDEnv) dd_cmd.HandlerFunc {
+	return func(ctx *dd_cmd.Context) {
 		readme := "🙌 <b>使用说明</b> v1.0.0\n" +
 			"\n 👉 <b>/spnode</b>  \n        ------  执行JS脚本文件" +
 			"\n 👉 <b>/logs</b>    \n        ------  下载日志文件" +

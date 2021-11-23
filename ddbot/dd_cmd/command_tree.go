@@ -1,32 +1,39 @@
 package dd_cmd
 
-// commandTrees 是指令组群，通常是需要挂载到 Engine 上来实现多个指令的启用
-type commandTrees []*commandTree
-
-// commandTree 是单一指令的集合，包含了当前指令的命令名和 当前 root 上存在的指令数组
-type commandTree struct {
-	method Executable    //method 是指的命令前缀,如 /cmd /help中的 "/"指令接口
-	root   *commandNodes //root   是当前指令下的各种命令的集合
+// HandlerPrefix 是单一指令的集合，包含了当前指令的命令名和 当前 root 上存在的指令数组
+type HandlerPrefix struct {
+	handlerPrfix Executable    //handlerPrfix 是指的命令前缀,如 /cmd /help中的 "/"指令接口
+	commands     *CommandNodes //commands   是handlerPrfix指令下的各种命令的集合
 }
 
+// commandNode 为指令节点，每个指令节点都对应
+type CommandNode struct {
+	path     string          // 所在指令的路径  /[cmd]
+	handlers HandlerFuncList // 回调处理函数
+}
+
+// HandlerPrefixs 是指令组群，通常是需要挂载到 Engine 上来实现多个指令的启用
+type HandlerPrefixList []*HandlerPrefix
+
 //get 获取当前前缀下的指令
-func (trees commandTrees) get(method Executable) *commandTree {
+func (trees HandlerPrefixList) get(handlerPrfix Executable) *HandlerPrefix {
 	if len(trees) == 0 {
 		return nil
 	}
 	for _, tree := range trees {
-		if tree.method.Prefix() == method.Prefix() {
+		if tree.handlerPrfix.Prefix() == handlerPrfix.Prefix() {
 			return tree
 		}
 	}
 	return nil
 }
 
-// addRoute 添加指令并封装加入函数
-func (nodes *commandNodes) addNode(path string, handlers HandlersChain) {
+type CommandNodes []*CommandNode
+
+// addCommandNode 添加指令并封装加入函数
+func (nodes *CommandNodes) addCommandNode(path string, handlers HandlerFuncList) {
 	cmdPath := path
 	var hasPath bool
-	//log.Println(len(*nodes))
 	for _, s := range *nodes {
 		hasPath = false
 		if s.path == cmdPath {
@@ -35,6 +42,6 @@ func (nodes *commandNodes) addNode(path string, handlers HandlersChain) {
 		}
 	}
 	if !hasPath {
-		*nodes = append(*nodes, &commandNode{path: cmdPath, handlers: handlers})
+		*nodes = append(*nodes, &CommandNode{path: cmdPath, handlers: handlers})
 	}
 }

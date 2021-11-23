@@ -11,50 +11,49 @@ import (
 
 // Engine 中注入了Bot所需要的一些，相当与一个大框架，使用时候需要New()来对Engine初始化操作
 type Engine struct {
-	RouterGroup
-	trees  commandTrees
-	pool   sync.Pool
-	Token  string
-	Userid int64
-	bot    *tgbotapi.BotAPI
+	CommandHandler
+	handlerPrfixList HandlerPrefixList
+	pool             sync.Pool
+	Token            string
+	Userid           int64
+	bot              *tgbotapi.BotAPI
 }
 
 // New 返回一个 Engine 实体,初始化操作并不包含任何路由和中间件
 func New() *Engine {
 	engine := &Engine{
-		RouterGroup: RouterGroup{
+		CommandHandler: CommandHandler{
 			Handlers: nil,
 			basePath: "/",
 			root:     true,
 		},
 	}
-	engine.RouterGroup.engine = engine
+	engine.CommandHandler.engine = engine
 	return engine
 }
 
-// addRoute 对指令集的添加 method 实则是指令的 prefix，函数创建了一个trees挂载到 Engine 中，
-// 将所有method相同的指令合并到一颗树组合中。
-func (engine *Engine) addRoute(method Executable, path string, handlers HandlersChain) {
-	log.Printf("> route on [ %s %s ]", method.Prefix(), path)
-	//查询 method 节点是否存在  例如 "/" "@"等这些是root节点，在root节点下存在一个trees切片集合包含该方法下的所有指令，
+// addCommand 将所有handlerPrfix相同(指令前缀)的指令合并到一颗树组合中。
+func (engine *Engine) addCommand(handlerPrfix Executable, path string, handlers HandlerFuncList) {
+	log.Printf("> route on [ %s %s ]", handlerPrfix.Prefix(), path)
+	//查询 handlerPrfix 节点是否存在  例如 "/" "@" ">"，
 	//对为空对象是初始化添加节点组
-	root := engine.trees.get(method)
-	if root == nil {
-		tree := new(commandTree)
-		tree.method = method
-		tree.root = &commandNodes{}
-		engine.trees = append(engine.trees, tree)
-		root = engine.trees.get(method)
+	commandTree := engine.handlerPrfixList.get(handlerPrfix)
+	if commandTree == nil {
+		tree := new(HandlerPrefix)
+		tree.handlerPrfix = handlerPrfix
+		tree.commands = &CommandNodes{}
+		engine.handlerPrfixList = append(engine.handlerPrfixList, tree)
+		commandTree = engine.handlerPrfixList.get(handlerPrfix)
 	}
 	//todo 解决获取节点到底是哪里的问题
-	root.root.addNode(path, handlers)
+	commandTree.commands.addCommandNode(path, handlers)
 }
 
-// 获取当前engine的指令前缀集合
+// GetCommandPrefixs 获取当前engine的指令前缀集合
 func (engine *Engine) GetCommandPrefixs() []string {
 	var prefixs []string
-	for _, v := range engine.trees {
-		prefixs = append(prefixs, v.method.Prefix())
+	for _, v := range engine.handlerPrfixList {
+		prefixs = append(prefixs, v.handlerPrfix.Prefix())
 	}
 	return prefixs
 }
@@ -114,31 +113,44 @@ func (engine *Engine) handleRequest(c *Context) {
 
 	msg = strings.Trim(msg, " ")
 	//对路由集合遍历的查询开头与请求一致的指令
-	//对入口路由进行查询到各个路由树中
-	var routes *commandTree
+	var hp *HandlerPrefix
 	var msgPrefix string
-	for _, tree := range engine.trees {
-		log.Printf("查询路由: %v", tree.method.Prefix())
-		if strings.HasPrefix(msg, tree.method.Prefix()) {
-			routes = tree
-			msgPrefix = tree.method.Prefix()
+	for _, tree := range engine.handlerPrfixList {
+		log.Printf("匹配指令前缀: %v", tree.handlerPrfix.Prefix())
+		if strings.HasPrefix(msg, tree.handlerPrfix.Prefix()) {
+			hp = tree
+			msgPrefix = tree.handlerPrfix.Prefix()
 		}
 	}
 
-	if routes != nil && len(*routes.root) > 0 {
-		if c.Request.Debug {
-			log.Printf("入口命令：%s", msgPrefix)
-		}
-		for _, route := range *routes.root {
-			log.Printf("%+v", fmt.Sprintf("%s%s", routes.method.Prefix(), route.path))
-			if fmt.Sprintf("%s%s", routes.method.Prefix(), route.path) == cleanPath(msg, 0)[0] {
-				if c.Request.Debug {
-					log.Printf("存在命令 %s", route.path)
-					log.Printf("等待命令 %s", msg)
-					log.Printf("接受命令 %s", msg)
-				}
+	if hp != nil && len(*hp.commands) > 0 {
+		hasCommand := false
+		log.Printf("入口命令：%s", msgPrefix)
+		for _, route := range *hp.commands {
+			if fmt.Sprintf("%s%s", hp.handlerPrfix.Prefix(), route.path) == cleanPath(msg, 0)[0] {
+				hasCommand = true
+				log.Printf("存在命令 %s", route.path)
+				log.Printf("等待命令 %s", msg)
+				log.Printf("接受命令 %s", msg)
+
 				for _, handler := range route.handlers {
 					handler(c)
+				}
+			}
+		}
+		if !hasCommand {
+			log.Printf("不存在命令 %s", msg)
+			unknowMsg := "/unknow"
+			hp = engine.handlerPrfixList.get(&Command{prefix: "/"})
+			for _, route := range *hp.commands {
+				if fmt.Sprintf("%s%s", hp.handlerPrfix.Prefix(), route.path) == cleanPath(unknowMsg, 0)[0] {
+					log.Printf("存在命令 %s", route.path)
+					log.Printf("等待命令 %s", unknowMsg)
+					log.Printf("接受命令 %s", unknowMsg)
+
+					for _, handler := range route.handlers {
+						handler(c)
+					}
 				}
 			}
 		}

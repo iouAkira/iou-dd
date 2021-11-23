@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	ddCmd "ddbot/dd_cmd"
+	dd_cmd "ddbot/dd_cmd"
 	models "ddbot/models"
 	ddutils "ddbot/utils"
 
@@ -15,8 +15,8 @@ import (
 )
 
 // 通过系统命令执行指定的操作
-func SysCmdHandler(env *models.DDEnv) ddCmd.HandlerFunc {
-	return func(c *ddCmd.Context) {
+func SysCmdHandler(env *models.DDEnv) dd_cmd.HandlerFunc {
+	return func(c *dd_cmd.Context) {
 		// "/cmd ls -l"返回 ["ls","-l"]
 		cmdMsgSplit := c.Vars()
 		// 返回的是tgbotapi.Message对象，包一层为了兼容CallbackQuery类型按钮交互消息
