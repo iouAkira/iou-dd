@@ -25,6 +25,7 @@ func (markup *RdcMarkup) IkType() string {
 	return markup.Cmd
 }
 
+// MakeKeyboardMarkup todo 业务层待实现
 func (markup *RdcMarkup) MakeKeyboardMarkup() InlineKeyboardMarkup {
 	var keyboardMarkup InlineKeyboardMarkup
 	return keyboardMarkup
@@ -63,6 +64,7 @@ func (markup *SpnodeMarkup) IkType() string {
 	return markup.Cmd
 }
 
+// MakeKeyboardMarkup todo 业务层待实现
 func (markup *SpnodeMarkup) MakeKeyboardMarkup() InlineKeyboardMarkup {
 	var keyboardMarkup InlineKeyboardMarkup
 	return keyboardMarkup
@@ -79,6 +81,8 @@ type LogsMarkup struct {
 func (markup *LogsMarkup) IkType() string {
 	return markup.Cmd
 }
+
+// MakeKeyboardMarkup todo 业务层待实现
 func (markup *LogsMarkup) MakeKeyboardMarkup() InlineKeyboardMarkup {
 	var keyboardMarkup InlineKeyboardMarkup
 	return keyboardMarkup
