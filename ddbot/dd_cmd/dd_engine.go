@@ -1,12 +1,11 @@
 package dd_cmd
 
 import (
+	ddutils "ddbot/utils"
 	"fmt"
 	"log"
 	"strings"
 	"sync"
-
-	ddutils "ddbot/utils"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -19,6 +18,7 @@ type Engine struct {
 	Token            string
 	Userid           int64
 	bot              *tgbotapi.BotAPI
+	options          config
 }
 
 // New 返回一个 Engine 实体,初始化操作并不包含任何路由和中间件
@@ -72,11 +72,15 @@ func (engine *Engine) GetPrefix(word string) string {
 
 // Run 主入口函数包含两个两个参数，token tg的bot token,userid 用户的id
 // 函数在启动时候会直接将 tgbotapi 进行初始化操作,并在结束进程时候停止信息的接受
-func (engine *Engine) Run(token string, userid int64) {
+func (engine *Engine) Run(token string, userid int64, opts ...EngineConfig) {
 	engine.Token = token
 	engine.Userid = userid
+	engine.options = defaultConfig
+	for _, opt := range opts {
+		opt(&engine.options)
+	}
 	bot, err := tgbotapi.NewBotAPI(token)
-	bot.Debug = false
+	bot.Debug = engine.options.debug
 	if err != nil {
 		log.Panicf("start bot failed with some error %v", err)
 	}
@@ -93,7 +97,7 @@ func (engine *Engine) Run(token string, userid int64) {
 // handleHTTPRequest
 func (engine *Engine) handleHTTPRequest(c *Context) {
 	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
+	u.Timeout = engine.options.timeout
 	updates := c.Request.GetUpdatesChan(u)
 	for update := range updates {
 		//log.Println(update.Message)
@@ -165,5 +169,29 @@ func (engine *Engine) handleRequest(c *Context) {
 			}
 		}
 
+	}
+}
+
+//配置项目
+type config struct {
+	debug   bool
+	timeout int
+}
+type EngineConfig func(config *config)
+
+var defaultConfig = config{
+	debug:   false,
+	timeout: 60,
+}
+
+func DebugMode(debug bool) EngineConfig {
+	return func(config *config) {
+		config.debug = debug
+	}
+}
+
+func TimeOut(t int) EngineConfig {
+	return func(monitor *config) {
+		monitor.timeout = t
 	}
 }
