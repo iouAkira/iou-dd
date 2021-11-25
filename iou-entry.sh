@@ -238,7 +238,7 @@ echo "[$DD_CRON_FILE_PATH] 任务处理完成..."
 echo -e
 
 echo "增加 submitShareCode.sh 脚本，用于清理日志，调用ddbot提交互助码到助力池..."
-sed -i "3 i sleep \$((RANDOM % 400)); sh $SCRIPTS_REPO_BASE_DIR/submitShareCode.sh |sed -e \"s|^|\$(date +'%Y-%m-%d %H:%M:%S') | \" >>$logDir/logs/submitCode.log 2>&1 &" $DD_CRON_FILE_PATH
+sed -i "3 i 30 23 * * * sleep \$((RANDOM % 400)); sh $SCRIPTS_REPO_BASE_DIR/submitShareCode.sh |sed -e \"s|^|\$(date +'%Y-%m-%d %H:%M:%S') | \" >>$logDir/logs/submitCode.log 2>&1 &" $DD_CRON_FILE_PATH
 sed -i "4 i  " $DD_CRON_FILE_PATH
 (
     cat <<EOF
