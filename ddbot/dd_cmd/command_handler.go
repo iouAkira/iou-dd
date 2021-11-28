@@ -19,7 +19,7 @@ func (commandHandler *CommandHandler) Handle(httpMethod Executable, command stri
 
 // RegCommandByChar [ICommandHandler]接口定义的方法；启动初始化注册监听指令
 func (commandHandler *CommandHandler) RegCommandByChar(commandPrefix string, command string, handlers ...HandlerFunc) ICommandHandler {
-	return commandHandler.handle(&Command{prefix: commandPrefix}, command, handlers)
+	return commandHandler.handle(&Command{prefix: commandPrefix,Cmd: command}, command, handlers)
 }
 
 // RegCommand 对消息命令的扩展，只要实现 Executable 接口即可对当前指令进行处理

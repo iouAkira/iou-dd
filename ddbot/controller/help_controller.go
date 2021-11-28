@@ -42,6 +42,7 @@ func HelpHandler(env *models.DDEnv) dd_cmd.HandlerFunc {
 	}
 }
 
+// CancelController 取消按钮回复信息
 func CancelController(ctx *dd_cmd.Context) {
 	if ctx.Update.CallbackQuery != nil {
 		c := ctx.Update.CallbackQuery
