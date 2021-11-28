@@ -160,10 +160,10 @@ done
 echo "[$DD_CRON_FILE_PATH]   "
 findDirCronFile
 
-echo "[$DD_CRON_FILE_PATH]   "
-echo "[$DD_CRON_FILE_PATH]   处理兼容旧版脚本任务配置文件"
-# echo $CRONFILES
-cat $SCRIPTS_REPO_BASE_DIR/docker/crontab_list.sh | grep -v "$CRONFILES" >>$DD_CRON_FILE_PATH
+# echo "[$DD_CRON_FILE_PATH]   "
+# echo "[$DD_CRON_FILE_PATH]   处理兼容旧版脚本任务配置文件"
+# # echo $CRONFILES
+# cat $SCRIPTS_REPO_BASE_DIR/docker/crontab_list.sh | grep -v "$CRONFILES" >>$DD_CRON_FILE_PATH
 
 echo "[$DD_CRON_FILE_PATH]   "
 echo "[$DD_CRON_FILE_PATH]   处理 mod shell"
@@ -196,7 +196,7 @@ echo "[$DD_CRON_FILE_PATH] "
 echo "[$DD_CRON_FILE_PATH]   处理 EXCLUDE_CRON 配置的关键字剔除相关任务..."
 if [ $EXCLUDE_CRON ]; then
     for kw in $(echo $EXCLUDE_CRON | tr "," " "); do
-        matchCron=$(cat $DD_CRON_FILE_PATH | grep "$kw")
+        matchCron=$(cat $DD_CRON_FILE_PATH | grep -v "$kw")
         if [ -z "$matchCron" ]; then
             echo "[$DD_CRON_FILE_PATH]   [EXCLUDE_CRON] 关键词 $kw 未匹配到任务"
             echo "[$DD_CRON_FILE_PATH]   [EXCLUDE_CRON] "
