@@ -7,6 +7,7 @@ echo "任务文件目录： [$CRON_FILE_DIR]"
 echo "当前执行目录： [$PWD]"
 echo "判断数据存放目录是已存在或者需要创建"
 export DD_DATA_DIR="$MNT_DIR/dd_data"
+export IOU_DD_DIR=$(PWD)
 # 该变量需要传递给ddbot同步脚本仓库使用
 export SCRIPTS_REPO_BASE_DIR="$REPOS_DIR/dd_scripts"
 export DD_CRON_FILE_PATH="$CRON_FILE_DIR/dd_scripts_cron.sh"
@@ -72,6 +73,8 @@ fi
 
 source "$DD_DATA_DIR/env.sh"
 
+# 去iou-dd仓库目录处理相关配置
+cd $IOU_DD_DIR
 # 判断平台架构使用对应平台版本的ddbot
 echo "目前只构建三个平台（amd64,arm64,arm）的ddbot，其他架构平台暂未发现使用者，如果有欢迎上报，并且只知道arch为x86_64(amd64)，aarch64(arm64)所以其他的就归到arm上"
 if [ "$(arch)" == "x86_64" ]; then
@@ -167,7 +170,6 @@ findDirCronFile
 
 echo "[$DD_CRON_FILE_PATH]   "
 echo "[$DD_CRON_FILE_PATH]   处理 mod shell"
-CUSTOM_SHELL_FILE=""
 if [ $CUSTOM_SHELL_FILE ]; then
     echo "" >"$SCRIPTS_REPO_BASE_DIR/shell_mod.sh"
     if expr "$CUSTOM_SHELL_FILE" : 'http.*' &>/dev/null; then
