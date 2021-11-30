@@ -14,7 +14,7 @@ func main() {
 	engine := pre_init.SetupRouters()
 	engine.Run(models.GlobalEnv.TgBotToken,
 		models.GlobalEnv.TgUserID,
-		ddCmd.DebugMode(true),
+		ddCmd.DebugMode(false),
 		ddCmd.TimeOut(60),
 	)
 }
