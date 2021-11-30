@@ -7,7 +7,7 @@ echo "任务文件目录： [$CRON_FILE_DIR]"
 echo "当前执行目录： [$PWD]"
 echo "判断数据存放目录是已存在或者需要创建"
 export DD_DATA_DIR="$MNT_DIR/dd_data"
-export IOU_DD_DIR=$(PWD)
+export IOU_DD_DIR=$(pwd)
 # 该变量需要传递给ddbot同步脚本仓库使用
 export SCRIPTS_REPO_BASE_DIR="$REPOS_DIR/dd_scripts"
 export DD_CRON_FILE_PATH="$CRON_FILE_DIR/dd_scripts_cron.sh"
@@ -126,7 +126,6 @@ echo "[$DD_CRON_FILE_PATH] "
 echo "[$DD_CRON_FILE_PATH] 任务处理开始..."
 
 #排除要扫描的文件crontab的文件名
-excludeFile="smiek_jd_zdjr.js,JS_USER_AGENTS.js,JD_DailyBonus.js,JDJRValidator"
 logDir="$DD_DATA_DIR/logs"
 CRONFILES="xxx.js"
 # 查找指定目录下脚本内的定时任务配置信息
@@ -139,7 +138,7 @@ findDirCronFile() {
     echo "[$DD_CRON_FILE_PATH]   开始查找$findDir目录下脚本文件内的crontab任务定义..."
     for scriptFile in $(ls -l $findDir | grep "^-" | awk '{print $9}' | tr "\n" " "); do
         cron=$(sed -n "s/.*crontab=[\"\|']\(.*\)[\"\|'].*/\1/p" "$findDir/$scriptFile")
-        if [ "$cron" != "" ] && [ "$(echo $excludeFile | grep "$scriptFile")" == "" ]; then
+        if [ "$cron" != "" ]; then
             cronName=$(sed -n "s/.*new Env([\"\|']\(.*\)[\"\|']).*/\1/p" "$findDir/$scriptFile")
             # echo "      #$cronName($findDir/$scriptFile)"
             # echo "      $cron node $findDir/$scriptFile >> $logDir/$(echo $scriptFile | sed "s/\.js/.log/g") 2>&1 &"
