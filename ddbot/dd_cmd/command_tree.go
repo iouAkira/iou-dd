@@ -45,3 +45,15 @@ func (nodes *CommandNodes) addCommandNode(path string, handlers HandlerFuncList)
 		*nodes = append(*nodes, &CommandNode{commandStr: cmdPath, handlers: handlers})
 	}
 }
+
+func (receiver *HandlerPrefix) get(cmdStr string) *CommandNode  {
+	if len(*receiver.commands) == 0 {
+		return nil
+	}
+	for _, tree := range *receiver.commands {
+		if tree.commandStr == cmdStr {
+			return tree
+		}
+	}
+	return nil
+}

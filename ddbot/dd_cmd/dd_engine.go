@@ -131,14 +131,20 @@ func (engine *Engine) handleRequest(c *Context) {
 	//对路由集合遍历的查询开头与请求一致的指令
 	var hp *HandlerPrefix
 	var msgPrefix string
+	//对前缀命令[root]的匹配，并将成功匹配的数据保存到hp中
 	for _, tree := range engine.handlerPrfixList {
-		log.Printf("匹配指令前缀: %v", tree.handlerPrfix.Prefix())
 		if strings.HasPrefix(msg, tree.handlerPrfix.Prefix()) {
+			log.Printf("匹配指令前缀: %v", tree.handlerPrfix.Prefix())
 			hp = tree
 			msgPrefix = tree.handlerPrfix.Prefix()
 		}
 	}
-
+	//CancelLoop:
+	//	cmd := engine.RedirectTo(&Command{prefix: "/", Cmd: "unknow"})
+	//	for _, f := range cmd.handlers {
+	//		f(c)
+	//	}
+	//对命令筛选，如果说存在根指令[root]即前缀匹配成功，继续对后续指令进行查询
 	if hp != nil && len(*hp.commands) > 0 {
 		hasCommand := false
 		log.Printf("入口命令：%s", msgPrefix)
@@ -158,18 +164,34 @@ func (engine *Engine) handleRequest(c *Context) {
 		}
 		if !hasCommand {
 			log.Printf("不存在命令 %s，响应[unkonw]", msg)
-			unknowMsg := "/unknow"
-			hp = engine.handlerPrfixList.get(&Command{prefix: "/"})
-			for _, route := range *hp.commands {
-				if fmt.Sprintf("%s%s", hp.handlerPrfix.Prefix(), route.commandStr) == ddutils.CleanCommand(unknowMsg, 0)[0] {
-					for _, handler := range route.handlers {
-						handler(c)
-					}
-				}
-			}
+			goto CancelLoop
 		}
-
+	}else {
+		log.Printf("不存在命令 %s，响应[unkonw]", msg)
+		goto CancelLoop
 	}
+CancelLoop:
+	c.RedirectTo(&Command{prefix: "/", Cmd: "unknow"})
+}
+
+// RedirectTo 通过指令对象跳转到相应路由中,如果当前指令不存在则直接返回空
+func (c *Context) RedirectTo(executable Executable) {
+	if cmd := c.engine.handlerPrfixList.
+		get(executable).
+		get(executable.GetCmd()); cmd != nil {
+		for _, f := range cmd.handlers {
+			f(c)
+		}
+	}
+	return
+}
+
+func (c *Context) RedirectToCmd(cmd string) {
+
+	//cmd := c.engine.handlerPrfixList.get(executable).get(executable.GetCmd())
+	//for _, f := range cmd.handlers {
+	//	f(c)
+	//}
 }
 
 //配置项目

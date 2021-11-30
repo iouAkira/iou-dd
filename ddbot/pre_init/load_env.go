@@ -93,7 +93,7 @@ func LoadEnv() string {
 		"更新仓库代码🔄":  fmt.Sprintf("/cmd cd %v ; sh iou-entry.sh", repoBaseDir),
 		"查看账号🍪":    "/rdc",
 		"查看系统进程⛓":  "/cmd ps -ef|grep -v 'grep\\| ts\\|/ts\\| sh'",
-		"查看帮助说明📝":  "/help",
+		"查看帮助说明📝":  ">help",
 	}
 	models.GlobalEnv = &models.DDEnv{
 		RepoBaseDir:              repoBaseDir,
