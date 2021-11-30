@@ -83,16 +83,16 @@ func (c *Context) Message(ctx *Context) *tgbotapi.Message {
 
 // ParseCmd 解析命令参数,对已经首字节为"/"进行裁剪，保留非空参数,并且把剩余按空格切分口存入 Command.Params 中
 func ParseCmd(cmd string, engine IPrefixHandler) (Command, error) {
-	cmd = strings.Trim(	cmd," ")
+	cmd = strings.Trim(cmd, " ")
 	if cmd == "" {
 		return Command{}, fmt.Errorf("命令不能为空")
 	}
 	commandPrefix := engine.GetPrefix(cmd)
-	if commandPrefix == ""{
+	if commandPrefix == "" {
 		return Command{}, fmt.Errorf("前缀无法识别")
 	}
 	//log.Printf("ParseCmd commandPrefix: %v", commandPrefix)
-	if !strings.HasPrefix(cmd,commandPrefix) {
+	if !strings.HasPrefix(cmd, commandPrefix) {
 		return Command{}, fmt.Errorf("非法命令")
 	}
 	cmd = strings.Trim(cmd, commandPrefix)
@@ -104,9 +104,28 @@ func ParseCmd(cmd string, engine IPrefixHandler) (Command, error) {
 		}
 		arr = append(arr, v)
 	}
-	cmdST := Command{prefix: commandPrefix,Cmd: cmdMsgSplit[0]}
+	cmdST := Command{prefix: commandPrefix, Cmd: cmdMsgSplit[0]}
 	//log.Println(cmdST)
 	//log.Printf("cmdST:%+v", cmdST)
 	cmdST.Params = cmdMsgSplit[1:]
 	return cmdST, nil
+}
+
+// RedirectTo 通过指令对象跳转到相应路由中,如果当前指令不存在则直接返回空
+func (c *Context) RedirectTo(executable Executable) {
+	if cmd := c.engine.handlerPrfixList.
+		get(executable).
+		get(executable.GetCmd()); cmd != nil {
+		for _, f := range cmd.handlers {
+			f(c)
+		}
+	}
+	return
+}
+
+func (c *Context) RedirectToCmd(cmd string,args ...string) {
+	cmd = strings.Trim(cmd, " ")
+	var hp *HandlerPrefix
+	_, hp = c.engine.getRoot(cmd)
+	fetchCmdWithHandler(c, hp, cmd)
 }
