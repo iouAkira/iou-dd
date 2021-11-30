@@ -115,7 +115,7 @@ func ParseCmd(cmd string, engine IPrefixHandler) (Command, error) {
 func (c *Context) RedirectTo(executable Executable) {
 	if cmd := c.engine.handlerPrfixList.
 		get(executable).
-		get(executable.GetCmd()); cmd != nil {
+		to(executable.GetCmd()); cmd != nil {
 		for _, f := range cmd.handlers {
 			f(c)
 		}

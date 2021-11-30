@@ -46,7 +46,7 @@ func (nodes *CommandNodes) addCommandNode(path string, handlers HandlerFuncList)
 	}
 }
 
-func (receiver *HandlerPrefix) get(cmdStr string) *CommandNode  {
+func (receiver *HandlerPrefix) to(cmdStr string) *CommandNode  {
 	if len(*receiver.commands) == 0 {
 		return nil
 	}
