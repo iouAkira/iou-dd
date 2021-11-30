@@ -137,6 +137,7 @@ func (engine *Engine) handleRequest(c *Context) {
 		hasCommand = fetchCmdWithHandler(c, hp, msg)
 	}
 	if !hasCommand {
+		//c.RedirectToCmd("/unknow")
 		c.RedirectTo(&Command{prefix: "/", Cmd: "unknow"})
 	}
 }
