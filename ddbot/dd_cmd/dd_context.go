@@ -2,6 +2,7 @@ package dd_cmd
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 
@@ -123,9 +124,15 @@ func (c *Context) RedirectTo(executable Executable) {
 	return
 }
 
-func (c *Context) RedirectToCmd(cmd string,args ...string) {
+// RedirectToCmd 通过字符串路径跳转到指定路由,支持后续，参数数组结构
+func (c *Context) RedirectToCmd(cmd string, args ...string) {
 	cmd = strings.Trim(cmd, " ")
-	var hp *HandlerPrefix
-	_, hp = c.engine.getRoot(cmd)
-	fetchCmdWithHandler(c, hp, cmd)
+	if len(args) > 0 {
+		cmd = CommandHelp(cmd, args...)
+	}
+	if command, err := ParseCmd(cmd, c.engine); err != nil {
+		log.Println("跳转出错:", err)
+	} else {
+		c.RedirectTo(&command)
+	}
 }

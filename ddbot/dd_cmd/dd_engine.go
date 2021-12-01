@@ -63,7 +63,7 @@ func (engine *Engine) GetCommandPrefixs() []string {
 func (engine *Engine) GetPrefix(word string) string {
 	prefixs := engine.GetCommandPrefixs()
 	for _, v := range prefixs {
-		if strings.HasSuffix(word, v) {
+		if strings.HasPrefix(word, v) {
 			return v
 		}
 	}
@@ -137,8 +137,8 @@ func (engine *Engine) handleRequest(c *Context) {
 		hasCommand = fetchCmdWithHandler(c, hp, msg)
 	}
 	if !hasCommand {
-		//c.RedirectToCmd("/unknow")
-		c.RedirectTo(&Command{prefix: "/", Cmd: "unknow"})
+		c.RedirectToCmd("/unknow")
+		//c.RedirectTo(&Command{prefix: "/", Cmd: "unknow"})
 	}
 }
 
