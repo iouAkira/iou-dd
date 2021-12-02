@@ -113,26 +113,30 @@ func ParseCmd(cmd string, engine IPrefixHandler) (Command, error) {
 }
 
 // RedirectTo 通过指令对象跳转到相应路由中,如果当前指令不存在则直接返回空
-func (c *Context) RedirectTo(executable Executable) {
+func (c *Context) RedirectTo(executable Executable) bool {
 	if cmd := c.engine.handlerPrfixList.
 		get(executable).
 		to(executable.GetCmd()); cmd != nil {
 		for _, f := range cmd.handlers {
 			f(c)
 		}
+		return true
+	} else {
+		return false
 	}
-	return
+
 }
 
 // RedirectToCmd 通过字符串路径跳转到指定路由,支持后续，参数数组结构
-func (c *Context) RedirectToCmd(cmd string, args ...string) {
+func (c *Context) RedirectToCmd(cmd string, args ...string) bool {
 	cmd = strings.Trim(cmd, " ")
 	if len(args) > 0 {
 		cmd = CommandHelp(cmd, args...)
 	}
 	if command, err := ParseCmd(cmd, c.engine); err != nil {
 		log.Println("跳转出错:", err)
+		return false
 	} else {
-		c.RedirectTo(&command)
+		return c.RedirectTo(&command)
 	}
 }
