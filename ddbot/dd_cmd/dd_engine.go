@@ -140,7 +140,6 @@ func (engine *Engine) handleRequest(c *Context) {
 	//fixed 快捷菜单无法激活的问题 //todo 并不是最优方案,主要原因是有全局参数进入,等待更新
 	for title, cmdStr := range models.GlobalEnv.ReplyKeyBoard {
 		if title == msg {
-			hasCommand = true
 			log.Println("快捷命令:", cmdStr)
 			c.HandlerPrefixStr = ddutils.CleanCommand(cmdStr, 0)[0]
 			c.Update.Message.Text = cmdStr
