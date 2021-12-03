@@ -1,6 +1,7 @@
 package dd_cmd
 
 import (
+	"ddbot/models"
 	ddutils "ddbot/utils"
 	"fmt"
 	"log"
@@ -135,6 +136,16 @@ func (engine *Engine) handleRequest(c *Context) {
 	if hp != nil && len(*hp.commands) > 0 {
 		log.Printf("入口命令：%s", msgPrefix)
 		hasCommand = fetchCmdWithHandler(c, hp, msg)
+	}
+	//fixed 快捷菜单无法激活的问题 //todo 并不是最优方案,主要原因是有全局参数进入,等待更新
+	for title, cmdStr := range models.GlobalEnv.ReplyKeyBoard {
+		if title == msg {
+			log.Println("快捷命令:", cmdStr)
+			c.HandlerPrefixStr = ddutils.CleanCommand(cmdStr, 0)[0]
+			c.Update.Message.Text = cmdStr
+			hasCommand = c.RedirectToCmd(cmdStr)
+			break
+		}
 	}
 	if !hasCommand {
 		c.RedirectToCmd("/unknow")

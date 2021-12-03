@@ -57,3 +57,7 @@ func (commandHandler *CommandHandler) returnObj() ICommandHandler {
 	}
 	return commandHandler
 }
+
+func (commandHandler *CommandHandler) WithHelp(content string) ICommandHandler {
+	return commandHandler
+}

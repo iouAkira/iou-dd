@@ -34,7 +34,6 @@ func DDNodeHandler(env *models.DDEnv) dd_cmd.HandlerFunc {
 		if cmdMsg == "" {
 			return
 		}
-
 		bot := ctx.Request
 		cmdMsgSplit := ddutils.CleanCommand(cmdMsg, 0)
 		log.Println("CleanCommand cmdMsgSplit:", cmdMsgSplit)
