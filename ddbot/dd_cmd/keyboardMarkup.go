@@ -113,6 +113,13 @@ func MakeKeyboard() InlineKeyboardMarkup {
 func (markup InlineKeyboardMarkup) WithCancel() InlineKeyboardMarkup {
 	return WrapCancelBtn(&markup)
 }
+
+func (markup InlineKeyboardMarkup) WithBack(cmd string) InlineKeyboardMarkup {
+	markup.InlineKeyboard = append(markup.InlineKeyboard, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("返回", cmd),
+	))
+	return markup
+}
 func (markup InlineKeyboardMarkup) WithExampleBtn() InlineKeyboardMarkup {
 	return WrapCancelWithExampleBtn(&markup)
 }

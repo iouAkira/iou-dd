@@ -71,6 +71,12 @@ func (c *Context) Varswiyh() []string {
 	return cmd.Params
 }
 
+func (c *Context) IsCallBack() bool {
+	if c.Update.CallbackQuery != nil {
+		return true
+	}
+	return false
+}
 //Message 获取当前路由下的消息信息
 func (c *Context) Message(ctx *Context) *tgbotapi.Message {
 	var cc *tgbotapi.Message

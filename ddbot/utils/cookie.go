@@ -23,14 +23,24 @@ func (cc CookieCfg) ReadCookies(isWsKey bool, args []string) ([]string, error) {
 	if len(args) <= 0 {
 		return ReadCookiesFrom(filePath)
 	}
-	ck := GetCookieByIndex(args[0], filePath)
-	cookieLine, err := ck.GetCookieContextByIndex()
-	log.Println(cookieLine)
+	_, err := strconv.Atoi(args[0])
+	var ck Iwskey
 	if err != nil {
-		return nil, err
-	}
-	return []string{cookieLine}, err
+		ck = GetCookieByID(args[0], filePath)
+		cookieLine, err := ck.GetCookieContextByID()
+		if err != nil {
+			return nil, err
+		}
+		return []string{cookieLine}, err
 
+	} else {
+		ck = GetCookieByIndex(args[0], filePath)
+		cookieLine, err := ck.GetCookieContextByIndex()
+		if err != nil {
+			return nil, err
+		}
+		return []string{cookieLine}, err
+	}
 }
 
 //Read cookies as list from cookies.list file
@@ -67,6 +77,7 @@ func ReadCookiesFrom(cookiesFilePath string) ([]string, error) {
 type Iwskey interface {
 	GetCookieLine() (string, error)
 	GetCookieContextByIndex() (string, error)
+	GetCookieContextByID() (string, error)
 }
 
 type PinFile struct {
@@ -88,6 +99,29 @@ func (p PinFile) GetCookieContextByIndex() (string, error) {
 		return "", fmt.Errorf("不存在的内容,请添加后继续。")
 	}
 	return line, nil
+}
+func (p PinFile) GetCookieContextByID() (string, error) {
+	cookiesFile, err := ioutil.ReadFile(p.FilePath)
+	if err != nil {
+		log.Printf("读取cookies文件出错。。%s", err)
+		return "", fmt.Errorf("读取cookies文件出错❌\n%v", err)
+	}
+	cookie := ""
+	lines := strings.Split(string(cookiesFile), "\n")
+	for _, line := range lines {
+		line = strings.ReplaceAll(line, "\r", "")
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+		if strings.Contains(line, p.Pin) {
+			cookie = line
+			break
+		}
+	}
+	if cookie == "" {
+		return "", fmt.Errorf("不存在WSKEY,请添加后继续。")
+	}
+	return cookie, nil
 }
 
 func (p PinFile) GetCookieLine() (string, error) {
