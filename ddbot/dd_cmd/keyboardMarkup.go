@@ -104,8 +104,10 @@ func (markup *LogsMarkup) MakeKeyboardMarkup() InlineKeyboardMarkup {
 	return keyboardMarkup
 }
 
-func MakeKeyboard(markup Markupable) InlineKeyboardMarkup {
-	return markup.MakeKeyboardMarkup()
+// MakeKeyboard 实例化空按钮对象
+func MakeKeyboard() InlineKeyboardMarkup {
+	var keyboardMarkup InlineKeyboardMarkup
+	return keyboardMarkup
 }
 
 func (markup InlineKeyboardMarkup) WithCancel() InlineKeyboardMarkup {
@@ -113,6 +115,10 @@ func (markup InlineKeyboardMarkup) WithCancel() InlineKeyboardMarkup {
 }
 func (markup InlineKeyboardMarkup) WithExampleBtn() InlineKeyboardMarkup {
 	return WrapCancelWithExampleBtn(&markup)
+}
+
+func (markup InlineKeyboardMarkup) Get() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.InlineKeyboardMarkup(markup)
 }
 
 // Slice_chunk 切片数据分组
