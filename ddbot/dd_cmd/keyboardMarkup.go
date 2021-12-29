@@ -124,6 +124,27 @@ func (markup InlineKeyboardMarkup) WithExampleBtn() InlineKeyboardMarkup {
 	return WrapCancelWithExampleBtn(&markup)
 }
 
+func (markup InlineKeyboardMarkup) WithCommand(cmd Executable) InlineKeyboardMarkup {
+	if cmd == nil {
+		return markup
+	}
+	description := cmd.Description()
+	if description == "" {
+		description = cmd.GetCmd()
+	}
+	markup.InlineKeyboard = append(markup.InlineKeyboard, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(description, cmd.Run()),
+	))
+	return WrapCancelBtn(&markup)
+}
+
+func (markup InlineKeyboardMarkup) WithCommandStr(cmd, description string) InlineKeyboardMarkup {
+	markup.InlineKeyboard = append(markup.InlineKeyboard, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData(description, cmd),
+	))
+	return WrapCancelBtn(&markup)
+}
+
 func (markup InlineKeyboardMarkup) Get() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.InlineKeyboardMarkup(markup)
 }

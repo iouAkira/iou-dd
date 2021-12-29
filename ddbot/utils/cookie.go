@@ -43,6 +43,17 @@ func (cc CookieCfg) ReadCookies(isWsKey bool, args []string) ([]string, error) {
 	}
 }
 
+func GetPinFromCookieText(cookie string) string  {
+	var pin string
+	ks := strings.Split(cookie, ";")
+	for _, k := range ks {
+		if strings.Contains(k, "pt_pin") || strings.Contains(k, "pin") {
+			pin = strings.Split(k, "=")[1]
+		}
+	}
+	return pin
+}
+
 //Read cookies as list from cookies.list file
 func ReadCookiesFrom(cookiesFilePath string) ([]string, error) {
 	cookiesFile, err := ioutil.ReadFile(cookiesFilePath)

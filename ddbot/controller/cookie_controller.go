@@ -4,6 +4,7 @@ import (
 	"ddbot/dd_cmd"
 	"ddbot/models"
 	"ddbot/utils"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strings"
@@ -40,7 +41,8 @@ func ReadCookieHandler(env *models.DDEnv) dd_cmd.HandlerFunc {
 			//respMsg := tgbotapi.NewEditMessageText(message.Chat.ID, message.MessageID, "请选择要执行的操作⚙️\n")
 			respMsg := tgbotapi.NewMessage(message.Chat.ID, "请选择要执行的操作⚙️\n 可以多参数方式 /rdc")
 			respMsg.Text = strings.Join(cookiesFrom, "\n")
-			ReplyMarkup := dd_cmd.MakeKeyboard().WithCancel().Get()
+			pinID := utils.GetPinFromCookieText(respMsg.Text)
+			ReplyMarkup := dd_cmd.MakeKeyboard().WithCommandStr(fmt.Sprintf("/wskey %s",pinID),"查询WSKEY").Get()
 			respMsg.ReplyMarkup = &ReplyMarkup
 			return respMsg
 		case CK_READ_LIST:
@@ -80,7 +82,7 @@ func ReadCookieHandler(env *models.DDEnv) dd_cmd.HandlerFunc {
 func ReadWSKeyHandler(env *models.DDEnv) dd_cmd.HandlerFunc {
 	cookies := utils.CookieCfg{DDEnv: env}
 	return func(ctx *dd_cmd.Context) {
-		//message := ctx.Message(ctx)
+		message := ctx.Message(ctx)
 		path := ctx.Vars()
 		cookiesFrom, err := cookies.ReadCookies(true, path)
 		if err != nil {
@@ -88,5 +90,17 @@ func ReadWSKeyHandler(env *models.DDEnv) dd_cmd.HandlerFunc {
 		}
 		//markup := dd_cmd.RdcMarkup{Cmd: "wskey", Prefix: "/", Cookies: cookiesFrom, RowBtns: 2, Suffix: "/wskey"}
 		log.Println(cookiesFrom)
+		if ctx.IsCallBack() {
+			oldMsg := tgbotapi.NewDeleteMessage(message.Chat.ID, message.MessageID)
+			_, _ = ctx.Send(oldMsg)
+		}
+		//respMsg := tgbotapi.NewEditMessageText(message.Chat.ID, message.MessageID, "请选择要执行的操作⚙️\n")
+		respMsg := tgbotapi.NewMessage(message.Chat.ID, "请选择要执行的操作⚙️\n 可以多参数方式 /wskey xxx")
+		respMsg.Text = strings.Join(cookiesFrom, "\n")
+		respMsg.ReplyMarkup = dd_cmd.MakeKeyboard().WithCancel().Get()
+		if _, err := ctx.Send(respMsg); err != nil {
+			log.Println(err)
+			return
+		}
 	}
 }
