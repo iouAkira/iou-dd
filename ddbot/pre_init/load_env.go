@@ -1,61 +1,146 @@
 package pre_init
 
 import (
-	"flag"
+	ddCmd "ddbot/dd_cmd"
+	"ddbot/models"
+	ddutils "ddbot/utils"
 	"fmt"
+	"github.com/urfave/cli/v2"
+	"log"
 	"os"
 	"strconv"
+	"strings"
+)
 
-	models "ddbot/models"
-	ddutils "ddbot/utils"
+//defaultRepoBaseDir := "/iouRepos/dd_scripts"
+//defaultDataBaseDir := "/data/dd_data"
+const (
+	_argEnv            = "env"
+	_argUp             = "up"
+	_argShareCode      = "commitShareCode"
+	_argSyncRepo       = "syncRepo"
+	_argRenewCookie    = "renewCookie"
+	defaultRepoBaseDir = "/iouRepos/dd_scripts"
+	defaultDataBaseDir = "/data/dd_data"
+)
+
+var (
+	envFilePath           string
+	envParams             string
+	upParams              string
+	repoBaseDir           string
+	dataBaseDir           string
+	wskeyListFilePath     string
+	cookieListFilePath    string
+	replyKeyboardFilePath string
+	tgUserIDStr           string
+	tgBotToken            string
+	tgUserID              int64
 )
 
 // LoadEnv 使用bot需要的一些配置变量初始化
 func LoadEnv() string {
-	defaultRepoBaseDir := "/iouRepos/dd_scripts"
-	defaultDataBaseDir := "/data/dd_data"
-	envFilePath := fmt.Sprintf("%v/env.sh", defaultDataBaseDir)
+	envFilePath = fmt.Sprintf("%v/env.sh", defaultDataBaseDir)
+	app := cli.NewApp()
+	app.Usage = "ddBot base on tgAPI"
+	app.Flags = []cli.Flag{
+		&cli.StringFlag{
+			Name:     _argEnv,
+			Value:    "envFilePath",
+			Usage:    "[必填项]设置env.sh路径，否则程序将不启动。",
+			Required: true,
+			//FilePath: envFilePath,
+			//DefaultText:
+			Destination: &envParams,
+			Aliases:     []string{"e"},
+		},
+	}
+	app.Commands = []*cli.Command{
+		{
+			Name:  _argUp,
+			Aliases: []string{"u"},
+			Usage: "启动bot；[commitShareCode]为提交互助码到助力池；[syncRepo]为同步仓库代码；[renewCookie]为给所有wskey续期",
+			Subcommands: []*cli.Command{
+				{
+					Name:     _argRenewCookie,
+					Usage:    "wskey续期cookie",
+					Category: "up",
+					Action: func(ctx *cli.Context) error {
+						fmt.Printf("开始给 %v 里面的全部wskey续期...\n", models.GlobalEnv.CookiesListFilePath)
+						ddutils.RenewAllCookie()
+						return nil
+					},
+				},
+				{
+					Name:     _argShareCode,
+					Usage:    "上传互助码",
+					Category: "up",
+					Action: func(ctx *cli.Context) error {
+						fmt.Printf("开始上传互助码...\n")
+						ddutils.UploadShareCode(models.GlobalEnv)
+						return nil
+					},
+				},
+				{
+					Name:     _argSyncRepo,
+					Usage:    "同步仓库代码",
+					Category: "up",
+					Action: func(ctx *cli.Context) error {
+						fmt.Printf("开始同步仓库代码。\n")
+						if models.GlobalEnv.RepoBaseDir != "" && strings.HasPrefix(models.GlobalEnv.RepoBaseDir, "/") {
+							ddutils.SyncRepo(models.GlobalEnv)
+						} else {
+							fmt.Printf("同步仓库设定的目录[%v]不规范，退出同步。\n", models.GlobalEnv.RepoBaseDir)
+						}
+						return nil
+					},
+				},
+			},
+			Action: func(ctx *cli.Context) error {
+				engine := SetupRouters()
+				engine.Run(models.GlobalEnv.TgBotToken,
+					models.GlobalEnv.TgUserID,
+					ddCmd.DebugMode(false),
+					ddCmd.TimeOut(60),
+				)
+				return nil
+			},
+		},
+	}
+	app.Before = func(context *cli.Context) error {
+		checkAfterInit()
+		return nil
+	}
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return upParams
+}
 
-	var (
-		envParams string
-		upParams  string
-		repoBaseDir string
-		dataBaseDir string
-		wskeyListFilePath string
-		cookieListFilePath string
-		replyKeyboardFilePath string
-		tgUserIDStr string
-		tgBotToken string
-		tgUserID int64
-	)
-	// StringVar用指定的名称、控制台参数项目、默认值、使用信息注册一个string类型flag，并将flag的值保存到p指向的变量
-	flag.StringVar(&envParams, "env", envFilePath, fmt.Sprintf("默认为[%v],如果env.sh文件不存在于该默认路径，请使用-env指定，否则程序将不启动。", envFilePath))
-	flag.StringVar(&upParams, "up", "", "默认为空，为启动bot；commitShareCode为提交互助码到助力池；syncRepo为同步仓库代码；renewCookie为给素有wskey续期")
-	flag.Parse()
-	fmt.Printf("-env 启动参数值:[%v];\n", envParams)
+func checkAfterInit() {
+	fmt.Println("执行前检查...")
+	fmt.Printf("1. env 启动参数值:[%v];\n", envParams)
 	if ddutils.CheckDirOrFileIsExist(envParams) {
 		envFilePath = envParams
 	} else {
 		fmt.Printf("[%v] ddbot需要是用相关环境变量配置文件不存在，确认目录文件是否存在\n", envParams)
 		os.Exit(0)
 	}
-
 	repoBaseDir = ddutils.GetEnvFromEnvFile(envFilePath, "REPO_BASE_DIR")
 	if repoBaseDir == "" {
 		fmt.Printf("未查找到仓库的基础目录配置信息，停止启动。使用默认仓库路径[%v]\n", defaultRepoBaseDir)
 		repoBaseDir = defaultDataBaseDir
 	} else {
-		fmt.Printf("仓库的基础目录配置信息[%v]\n", repoBaseDir)
+		fmt.Printf("2. 仓库的基础目录配置信息[%v]\n", repoBaseDir)
 	}
-
 	dataBaseDir = ddutils.GetEnvFromEnvFile(envFilePath, "DATA_BASE_DIR")
 	if dataBaseDir == "" || !ddutils.CheckDirOrFileIsExist(dataBaseDir) {
 		fmt.Printf("未查找到数据存放目录配置信息，停止启动。\n")
 		os.Exit(0)
 	} else {
-		fmt.Printf("数据存放目录配置信息[%v]\n", dataBaseDir)
+		fmt.Printf("3. 数据存放目录配置信息[%v]\n", dataBaseDir)
 	}
-
 	wskeyListFilePath = ddutils.GetEnvFromEnvFile(envFilePath, "WSKEY_FILE_PATH")
 	if wskeyListFilePath == "" {
 		wskeyListFilePath = fmt.Sprintf("%v/cookies_wskey.list", dataBaseDir)
@@ -109,6 +194,4 @@ func LoadEnv() string {
 		TgUserID:                 tgUserID,
 		ReplyKeyBoard:            replyKeyBoard,
 	}
-
-	return upParams
 }
